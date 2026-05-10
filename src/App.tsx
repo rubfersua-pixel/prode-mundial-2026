@@ -1591,6 +1591,112 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser}) {
   );
 }
 
+// --- RULES MODAL --------------------------------------------------------------
+function RulesModal({onClose}) {
+  const bo = `1px solid ${C.border}`;
+  const Section = ({icon,title,children}) => (
+    <div style={{marginBottom:"1.25rem"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.5rem"}}>
+        <span style={{fontSize:"1.1rem"}}>{icon}</span>
+        <span style={{fontSize:"0.85rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:"white"}}>{title}</span>
+      </div>
+      <div style={{paddingLeft:"1.6rem"}}>{children}</div>
+    </div>
+  );
+  const Row = ({label,value,color}) => (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0.35rem 0",borderBottom:bo}}>
+      <span style={{fontSize:"0.78rem",color:C.muted}}>{label}</span>
+      <span style={{fontSize:"0.78rem",fontWeight:900,color:color||C.gold}}>{value}</span>
+    </div>
+  );
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"1rem",paddingTop:"3rem"}}>
+      <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(4px)"}}/>
+      <div style={{position:"relative",width:"100%",maxWidth:"540px",maxHeight:"86vh",display:"flex",flexDirection:"column",background:"#0a1a0a",border:`1px solid ${C.sky}40`,borderRadius:"1.25rem",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.6)"}}>
+
+        {/* Header */}
+        <div style={{padding:"0.875rem 1rem",borderBottom:bo,display:"flex",alignItems:"center",gap:"0.5rem",flexShrink:0,background:"rgba(56,189,248,0.06)"}}>
+          <span style={{fontSize:"1.25rem"}}>📋</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:"0.95rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:C.sky}}>Reglas del Prode</div>
+            <div style={{fontSize:"0.6rem",color:C.muted}}>Mundial 2026 · USA · México · Canadá</div>
+          </div>
+          <button onClick={onClose} style={{...S.btn,width:"1.5rem",height:"1.5rem",borderRadius:"50%",background:"rgba(255,255,255,0.08)",color:C.muted,border:"none",fontSize:"0.85rem"}}>✕</button>
+        </div>
+
+        {/* Content */}
+        <div style={{overflowY:"auto",flex:1,padding:"1rem"}}>
+
+          <Section icon="⚽" title="Puntuación por Partido">
+            <Row label="Resultado exacto (ej: 2-1 acertado)" value="+3 pts"/>
+            <Row label="Ganador / Empate correcto" value="+3 pts"/>
+            <Row label="Goles del local acertados" value="+1 pt"/>
+            <Row label="Goles del visitante acertados" value="+1 pt"/>
+            <div style={{marginTop:"0.5rem",padding:"0.4rem 0.6rem",background:"rgba(251,191,36,0.08)",border:`1px solid rgba(251,191,36,0.2)`,borderRadius:"0.5rem"}}>
+              <span style={{fontSize:"0.72rem",color:C.gold,fontWeight:700}}>Máximo por partido: 8 pts · Con comodín 🃏: hasta 16 pts</span>
+            </div>
+          </Section>
+
+          <Section icon="🃏" title="Comodines">
+            <div style={{fontSize:"0.78rem",color:C.muted,lineHeight:1.6}}>
+              Cada usuario tiene <span style={{color:"white",fontWeight:900}}>2 comodines por fase</span> (Fase Grupos y Fases Finales son independientes — no se acumulan).<br/>
+              Al activar un comodín en un partido, <span style={{color:C.gold,fontWeight:900}}>los puntos obtenidos se duplican</span>.
+            </div>
+          </Section>
+
+          <Section icon="⭐" title="Pronósticos Especiales">
+            <Row label="Campeón del Mundial" value="+10 pts"/>
+            <Row label="Subcampeón" value="+7 pts"/>
+            <Row label="Goleador del torneo" value="+10 pts"/>
+            <Row label="Goleador Designado" value="+1 pt por gol"/>
+            <Row label="Arquero Designado" value="+1 pt por arco en 0"/>
+          </Section>
+
+          <Section icon="🎯" title="Clasificados a 16avos">
+            <div style={{fontSize:"0.78rem",color:C.muted,lineHeight:1.6,marginBottom:"0.5rem"}}>
+              Elegís hasta <span style={{color:"white",fontWeight:900}}>3 equipos por grupo</span> (máximo 32 en total, 8 terceros máximo).
+            </div>
+            <Row label="1° y 2° de grupo acertados" value="+1 pt c/u"/>
+            <Row label="Mejor tercero acertado" value="+2 pts"/>
+          </Section>
+
+          <Section icon="🏆" title="Fases Finales">
+            <div style={{fontSize:"0.78rem",color:C.muted,lineHeight:1.6,marginBottom:"0.5rem"}}>
+              El sistema de puntuación es el mismo que en fase de grupos.<br/>
+              <span style={{color:C.rose,fontWeight:700}}>Solo se cuentan los 90 minutos + alargue. Los penales NO suman.</span>
+            </div>
+            <Row label="16avos · 8avos · Cuartos · Semis · Final" value="Mismo sistema"/>
+          </Section>
+
+          <Section icon="👑" title="Rey de Llaves">
+            <div style={{fontSize:"0.78rem",color:C.muted,lineHeight:1.6,marginBottom:"0.5rem"}}>
+              Se cuenta quién acertó más <span style={{color:"white",fontWeight:900}}>resultados (ganador)</span> en toda la fase final.
+            </div>
+            <Row label="🥇 Mayor cantidad de aciertos" value="+10 pts" color={C.gold}/>
+            <Row label="🥈 Segundo lugar" value="+6 pts" color="#94a3b8"/>
+            <Row label="🥉 Tercer lugar" value="+3 pts" color="#b45309"/>
+          </Section>
+
+          <Section icon="🔒" title="Cierre de Pronósticos">
+            <div style={{fontSize:"0.78rem",color:C.muted,lineHeight:1.6}}>
+              Cada partido se bloquea automáticamente <span style={{color:C.rose,fontWeight:700}}>10 minutos antes del kickoff</span> (hora boliviana BOT, UTC-4).<br/>
+              Una vez cerrado, no se puede modificar el pronóstico.<br/>
+              El <span style={{color:"white",fontWeight:700}}>Muro de Pronósticos 👁️</span> se activa cuando se cierra el primer partido — podés ver los pronósticos de todos los jugadores.
+            </div>
+          </Section>
+
+          <div style={{padding:"0.75rem",background:"rgba(56,189,248,0.06)",border:`1px solid rgba(56,189,248,0.2)`,borderRadius:"0.75rem",marginTop:"0.5rem"}}>
+            <div style={{fontSize:"0.72rem",color:C.sky,fontWeight:700,marginBottom:"0.25rem"}}>💡 Tip</div>
+            <div style={{fontSize:"0.72rem",color:C.muted,lineHeight:1.5}}>
+              Usá tus comodines en partidos donde estés muy seguro del resultado — podés ganar hasta 16 puntos en un solo partido.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- LOGIN --------------------------------------------------------------------
 function Login({onLogin}) {
   const [u,setU]=useState(""),[p,setP]=useState(""),[err,setErr]=useState(""),[loading,setL]=useState(false);
@@ -1651,9 +1757,10 @@ export default function App() {
   const [ready,setReady]   = useState(false);
   const [user,setUser]     = useState(null);
   const [view,setView]     = useState("grupos"); // "grupos" | "finales"
+  const [rulesOpen,setRulesOpen]   = useState(false);
   const [muroOpen,setMuroOpen]     = useState(false);
   const [muroIdx,setMuroIdx]       = useState(0);
-  const [rankModalOpen,setRankModal] = useState(false); // current match index in muro
+  const [rankModalOpen,setRankModal] = useState(false);
   const [subRound,setSubRound] = useState(null); // null = nothing open
   const [fScores,setFScores]   = useState({}); // knockout scores keyed by matchId
   const [fJokers,setFJokers]   = useState([]); // max 2 per user for finales
@@ -1774,6 +1881,12 @@ export default function App() {
           <div style={{display:"flex",alignItems:"center",gap:"0.5rem",flexWrap:"wrap"}}>
             <div style={{width:"1.75rem",height:"1.75rem",borderRadius:"0.5rem",background:"rgba(251,191,36,0.2)",border:"1px solid rgba(251,191,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.75rem"}}>{user[0].toUpperCase()}</div>
             <span style={{fontWeight:900,fontSize:"0.875rem",color:"rgba(255,255,255,0.6)"}}>{user}</span>
+            <button onClick={()=>setRulesOpen(true)} title="Reglas del juego"
+              style={{...S.btn,display:"flex",alignItems:"center",gap:"0.3rem",padding:"0.2rem 0.5rem",
+                background:"rgba(56,189,248,0.12)",border:`1px solid rgba(56,189,248,0.3)`,
+                color:C.sky,fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em"}}>
+              📋 Reglas
+            </button>
             {myPts&&<div style={{display:"flex",alignItems:"center",gap:"0.3rem",padding:"0.2rem 0.6rem",background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:"99px"}}><span style={{fontWeight:900,fontSize:"0.75rem",color:C.gold}}>{myPts.total} pts</span><span style={{fontSize:"0.6rem",color:C.muted}}>({myPts.partidos}+{myPts.especiales})</span></div>}
             {saveOk&&<span style={{fontSize:"0.65rem",fontWeight:700,color:C.emerald}}>✓ guardado</span>}
           </div>
@@ -1839,6 +1952,7 @@ export default function App() {
         })()}
 
         {/* -- MURO MODAL -- */}
+        {rulesOpen && <RulesModal onClose={()=>setRulesOpen(false)}/>}
         {muroOpen && <MuroModal onClose={()=>setMuroOpen(false)} muroIdx={muroIdx} setMuroIdx={setMuroIdx} currentUser={user}/>}
 
         {/* -- RANKING MODAL -- */}
@@ -1928,6 +2042,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
