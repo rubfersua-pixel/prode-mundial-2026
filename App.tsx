@@ -11,13 +11,179 @@ const FONT = "'Barlow Condensed', 'Arial Narrow', Arial, sans-serif";
 const FONT_BODY = "'Barlow', Arial, sans-serif";
 
 // --- STORAGE ------------------------------------------------------------------
-const MEM = {};
-const sGet  = async k => { try { if (window?.storage?.get)    { const r = await window.storage.get(k);    return r?.value??null; } } catch(_){} return MEM[k]??null; };
-const sSet  = async (k,v,sh) => { try { if (window?.storage?.set)    { await window.storage.set(k,v,sh); } } catch(_){} MEM[k]=v; };
-const sDel  = async k => { try { if (window?.storage?.delete) { await window.storage.delete(k);  } } catch(_){} delete MEM[k]; };
-const sList = async p => { try { if (window?.storage?.list)   { const r = await window.storage.list(p); return r?.keys??[]; } } catch(_){} return Object.keys(MEM).filter(k=>k.startsWith(p)); };
+// --- SUPABASE CONFIG ----------------------------------------------------------
+const SB_URL = "https://eyyavejigrwejdbbsrjj.supabase.co";
+const SB_KEY = "sb_publishable_dGeHxkzz-IqmM3FrjgkElQ_u7eosvri";
 
-// --- STYLES -------------------------------------------------------------------
+const sbFetch = async (path, method="GET", body=null) => {
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      "apikey": SB_KEY,
+      "Authorization": `Bearer ${SB_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": method==="POST"?"resolution=merge-duplicates,return=minimal":"return=minimal",
+    },
+    body: body ? JSON.stringify(body) : null,
+  });
+  if(!res.ok && res.status !== 404) {
+    const err = await res.text().catch(()=>"");
+    console.error("Supabase error:", res.status, err);
+  }
+  if(method==="GET" && res.ok) return res.json();
+  return null;
+};
+
+// Storage helpers - same interface as before
+const sGetUser = async (username) => {
+  const data = await sbFetch(`users?username=eq.${encodeURIComponent(username)}&select=*`);
+  return data?.[0] || null;
+};
+
+const sSetUser = async (username, password) => {
+  await sbFetch("users", "POST", {username, password});
+};
+
+const sGetScores = async (username) => {
+  const data = await sbFetch(`scores?username=eq.${encodeURIComponent(username)}&select=match_id,home,away`);
+  if(!data?.length) return null;
+  const obj = {};
+  data.forEach(r => { obj[r.match_id] = {home:r.home,away:r.away}; });
+  return obj;
+};
+
+const sSetScores = async (username, scores) => {
+  const rows = Object.entries(scores)
+    .filter(([,s]) => s.home!==""||s.away!=="")
+    .map(([id,s]) => ({username,match_id:parseInt(id),home:s.home||"",away:s.away||""}));
+  if(rows.length) await sbFetch("scores", "POST", rows);
+};
+
+const sSetScore = async (username, matchId, home, away) => {
+  await sbFetch("scores", "POST", [{username,match_id:parseInt(matchId),home:home||"",away:away||""}]);
+};
+
+const sGetSpecials = async (username) => {
+  const data = await sbFetch(`specials?username=eq.${encodeURIComponent(username)}&select=data`);
+  return data?.[0]?.data || null;
+};
+
+const sSetSpecials = async (username, data) => {
+  await sbFetch("specials", "POST", {username, data});
+};
+
+const sGetJokers = async (username) => {
+  const data = await sbFetch(`jokers?username=eq.${encodeURIComponent(username)}&select=match_ids`);
+  return data?.[0]?.match_ids || null;
+};
+
+const sSetJokers = async (username, matchIds) => {
+  await sbFetch("jokers", "POST", {username, match_ids:matchIds});
+};
+
+const sGetFScores = async (username) => {
+  const data = await sbFetch(`fscores?username=eq.${encodeURIComponent(username)}&select=match_id,home,away`);
+  if(!data?.length) return null;
+  const obj = {};
+  data.forEach(r => { obj[r.match_id] = {home:r.home,away:r.away}; });
+  return obj;
+};
+
+const sSetFScore = async (username, matchId, home, away) => {
+  await sbFetch("fscores", "POST", [{username,match_id:String(matchId),home:home||"",away:away||""}]);
+};
+
+const sGetFJokers = async (username) => {
+  const data = await sbFetch(`fjokers?username=eq.${encodeURIComponent(username)}&select=match_ids`);
+  return data?.[0]?.match_ids || null;
+};
+
+const sSetFJokers = async (username, matchIds) => {
+  await sbFetch("fjokers", "POST", {username, match_ids:matchIds.map(String)});
+};
+
+const sGetRealResults = async () => {
+  const data = await sbFetch(`real_results?id=eq.singleton&select=scores,specials,knockout_results`);
+  const r = data?.[0];
+  if(!r) return null;
+  return {scores:r.scores||{},specials:r.specials||{},knockoutResults:r.knockout_results||{}};
+};
+
+const sSetRealResults = async (scores, specials, knockoutResults) => {
+  await sbFetch("real_results", "POST", {
+    id:"singleton",
+    scores: scores||{},
+    specials: specials||{},
+    knockout_results: knockoutResults||{}
+  });
+};
+
+const sGetAllUsers = async () => {
+  const data = await sbFetch(`users?select=username&order=username`);
+  return data?.map(r=>r.username) || [];
+};
+
+const sGetAllScores = async () => {
+  const data = await sbFetch(`scores?select=username,match_id,home,away`);
+  if(!data) return {};
+  const result = {};
+  data.forEach(r => {
+    if(!result[r.username]) result[r.username] = {};
+    result[r.username][r.match_id] = {home:r.home,away:r.away};
+  });
+  return result;
+};
+
+const sGetAllJokers = async () => {
+  const data = await sbFetch(`jokers?select=username,match_ids`);
+  if(!data) return {};
+  const result = {};
+  data.forEach(r => { result[r.username] = r.match_ids||[]; });
+  return result;
+};
+
+const sGetAllFScores = async () => {
+  const data = await sbFetch(`fscores?select=username,match_id,home,away`);
+  if(!data) return {};
+  const result = {};
+  data.forEach(r => {
+    if(!result[r.username]) result[r.username] = {};
+    result[r.username][r.match_id] = {home:r.home,away:r.away};
+  });
+  return result;
+};
+
+const sGetAllFJokers = async () => {
+  const data = await sbFetch(`fjokers?select=username,match_ids`);
+  if(!data) return {};
+  const result = {};
+  data.forEach(r => { result[r.username] = r.match_ids||[]; });
+  return result;
+};
+
+const sDeleteAll = async () => {
+  await Promise.all([
+    sbFetch("scores?username=neq.impossible","DELETE"),
+    sbFetch("specials?username=neq.impossible","DELETE"),
+    sbFetch("jokers?username=neq.impossible","DELETE"),
+    sbFetch("fscores?username=neq.impossible","DELETE"),
+    sbFetch("fjokers?username=neq.impossible","DELETE"),
+    sbFetch("real_results?id=eq.singleton","DELETE"),
+    sbFetch("users?username=neq.impossible","DELETE"),
+  ]);
+};
+
+const sDeleteGameData = async () => {
+  await Promise.all([
+    sbFetch("scores?username=neq.impossible","DELETE"),
+    sbFetch("specials?username=neq.impossible","DELETE"),
+    sbFetch("jokers?username=neq.impossible","DELETE"),
+    sbFetch("fscores?username=neq.impossible","DELETE"),
+    sbFetch("fjokers?username=neq.impossible","DELETE"),
+    sbFetch("real_results?id=eq.singleton","DELETE"),
+  ]);
+};
+
 const C = {
   bg:       "#070f07",
   surface:  "rgba(255,255,255,0.07)",
@@ -109,111 +275,111 @@ const GROUPS = {
 
 // --- FIXTURES -----------------------------------------------------------------
 const FECHAS = [
-  {id:1,label:"Fecha 1",sub:"Jueves 11 de Junio, 2026",matches:[
-    {id:1001,home:"mex",away:"rsa",time:"15:00",venue:"Estadio Azteca",group:"A"},
-    {id:1002,home:"kor",away:"cze",time:"22:00",venue:"Estadio Akron",group:"A"},
+  {id:1,label:"Fecha 1",sub:"Miércoles 14 de Mayo, 2026",matches:[
+    {id:1001,home:"mex",away:"rsa",time:"08:00",venue:"Estadio Azteca",group:"A"},
+    {id:1002,home:"kor",away:"cze",time:"09:00",venue:"Estadio Akron",group:"A"},
   ]},
-  {id:2,label:"Fecha 2",sub:"Viernes 12 de Junio, 2026",matches:[
-    {id:1003,home:"can",away:"bih",time:"15:00",venue:"BMO Field",group:"B"},
-    {id:1004,home:"usa",away:"par",time:"21:00",venue:"SoFi Stadium",group:"D"},
+  {id:2,label:"Fecha 2",sub:"Miércoles 14 de Mayo, 2026",matches:[
+    {id:1003,home:"can",away:"bih",time:"10:00",venue:"BMO Field",group:"B"},
+    {id:1004,home:"usa",away:"par",time:"11:00",venue:"SoFi Stadium",group:"D"},
   ]},
-  {id:3,label:"Fecha 3",sub:"Sábado 13 de Junio, 2026",matches:[
-    {id:1005,home:"qat",away:"sui",time:"15:00",venue:"Levi's Stadium",group:"B"},
-    {id:1006,home:"bra",away:"mar",time:"18:00",venue:"MetLife Stadium",group:"C"},
-    {id:1007,home:"hai",away:"sco",time:"21:00",venue:"Gillette Stadium",group:"C"},
+  {id:3,label:"Fecha 3",sub:"Miércoles 14 de Mayo, 2026",matches:[
+    {id:1005,home:"qat",away:"sui",time:"12:00",venue:"Levi's Stadium",group:"B"},
+    {id:1006,home:"bra",away:"mar",time:"13:00",venue:"MetLife Stadium",group:"C"},
+    {id:1007,home:"hai",away:"sco",time:"14:00",venue:"Gillette Stadium",group:"C"},
   ]},
-  {id:4,label:"Fecha 4",sub:"Domingo 14 de Junio, 2026",matches:[
-    {id:1008,home:"aus",away:"tur",time:"00:00",venue:"BC Place",group:"D"},
-    {id:1009,home:"ger",away:"cur",time:"13:00",venue:"NRG Stadium",group:"E"},
-    {id:1010,home:"civ",away:"ecu",time:"19:00",venue:"Lincoln Financial Field",group:"E"},
-    {id:1011,home:"ned",away:"jpn",time:"16:00",venue:"AT&T Stadium",group:"F"},
-    {id:1012,home:"swe",away:"tun",time:"22:00",venue:"Estadio BBVA",group:"F"},
+  {id:4,label:"Fecha 4",sub:"Miércoles 14 de Mayo, 2026",matches:[
+    {id:1008,home:"aus",away:"tur",time:"15:00",venue:"BC Place",group:"D"},
+    {id:1009,home:"ger",away:"cur",time:"16:00",venue:"NRG Stadium",group:"E"},
+    {id:1010,home:"civ",away:"ecu",time:"17:00",venue:"Lincoln Financial Field",group:"E"},
+    {id:1011,home:"ned",away:"jpn",time:"18:00",venue:"AT&T Stadium",group:"F"},
+    {id:1012,home:"swe",away:"tun",time:"19:00",venue:"Estadio BBVA",group:"F"},
   ]},
-  {id:5,label:"Fecha 5",sub:"Lunes 15 de Junio, 2026",matches:[
-    {id:1013,home:"bel",away:"egy",time:"15:00",venue:"Lumen Field",group:"G"},
+  {id:5,label:"Fecha 5",sub:"Jueves 15 de Mayo, 2026",matches:[
+    {id:1013,home:"bel",away:"egy",time:"20:00",venue:"Lumen Field",group:"G"},
     {id:1014,home:"iri",away:"nzl",time:"21:00",venue:"SoFi Stadium",group:"G"},
-    {id:1015,home:"esp",away:"cpv",time:"12:00",venue:"Mercedes-Benz Stadium",group:"H"},
-    {id:1016,home:"ksa",away:"uru",time:"18:00",venue:"Hard Rock Stadium",group:"H"},
+    {id:1015,home:"esp",away:"cpv",time:"22:00",venue:"Mercedes-Benz Stadium",group:"H"},
+    {id:1016,home:"ksa",away:"uru",time:"08:00",venue:"Hard Rock Stadium",group:"H"},
   ]},
-  {id:6,label:"Fecha 6",sub:"Martes 16 de Junio, 2026",matches:[
-    {id:1017,home:"fra",away:"sen",time:"15:00",venue:"MetLife Stadium",group:"I"},
-    {id:1018,home:"irq",away:"nor",time:"18:00",venue:"Gillette Stadium",group:"I"},
-    {id:1019,home:"arg",away:"alg",time:"21:00",venue:"Arrowhead Stadium",group:"J"},
+  {id:6,label:"Fecha 6",sub:"Jueves 15 de Mayo, 2026",matches:[
+    {id:1017,home:"fra",away:"sen",time:"09:00",venue:"MetLife Stadium",group:"I"},
+    {id:1018,home:"irq",away:"nor",time:"10:00",venue:"Gillette Stadium",group:"I"},
+    {id:1019,home:"arg",away:"alg",time:"11:00",venue:"Arrowhead Stadium",group:"J"},
   ]},
-  {id:7,label:"Fecha 7",sub:"Miércoles 17 de Junio, 2026",matches:[
-    {id:1020,home:"aut",away:"jor",time:"00:00",venue:"Levi's Stadium",group:"J"},
+  {id:7,label:"Fecha 7",sub:"Jueves 15 de Mayo, 2026",matches:[
+    {id:1020,home:"aut",away:"jor",time:"12:00",venue:"Levi's Stadium",group:"J"},
     {id:1021,home:"por",away:"cod",time:"13:00",venue:"NRG Stadium",group:"K"},
-    {id:1022,home:"uzb",away:"col",time:"22:00",venue:"Estadio Azteca",group:"K"},
-    {id:1023,home:"eng",away:"cro",time:"16:00",venue:"AT&T Stadium",group:"L"},
-    {id:1024,home:"gha",away:"pan",time:"19:00",venue:"BMO Field",group:"L"},
+    {id:1022,home:"uzb",away:"col",time:"14:00",venue:"Estadio Azteca",group:"K"},
+    {id:1023,home:"eng",away:"cro",time:"15:00",venue:"AT&T Stadium",group:"L"},
+    {id:1024,home:"gha",away:"pan",time:"16:00",venue:"BMO Field",group:"L"},
   ]},
-  {id:8,label:"Fecha 8",sub:"Jueves 18 de Junio, 2026",matches:[
-    {id:1025,home:"cze",away:"rsa",time:"12:00",venue:"Mercedes-Benz Stadium",group:"A"},
-    {id:1026,home:"mex",away:"kor",time:"21:00",venue:"Estadio Akron",group:"A"},
-    {id:1027,home:"sui",away:"bih",time:"15:00",venue:"SoFi Stadium",group:"B"},
-    {id:1028,home:"can",away:"qat",time:"18:00",venue:"BC Place",group:"B"},
+  {id:8,label:"Fecha 8",sub:"Jueves 15 de Mayo, 2026",matches:[
+    {id:1025,home:"cze",away:"rsa",time:"17:00",venue:"Mercedes-Benz Stadium",group:"A"},
+    {id:1026,home:"mex",away:"kor",time:"18:00",venue:"Estadio Akron",group:"A"},
+    {id:1027,home:"sui",away:"bih",time:"19:00",venue:"SoFi Stadium",group:"B"},
+    {id:1028,home:"can",away:"qat",time:"20:00",venue:"BC Place",group:"B"},
   ]},
-  {id:9,label:"Fecha 9",sub:"Viernes 19 de Junio, 2026",matches:[
-    {id:1029,home:"sco",away:"mar",time:"18:00",venue:"Gillette Stadium",group:"C"},
-    {id:1030,home:"bra",away:"hai",time:"20:30",venue:"Lincoln Financial Field",group:"C"},
-    {id:1031,home:"usa",away:"aus",time:"15:00",venue:"Lumen Field",group:"D"},
+  {id:9,label:"Fecha 9",sub:"Viernes 16 de Mayo, 2026",matches:[
+    {id:1029,home:"sco",away:"mar",time:"21:00",venue:"Gillette Stadium",group:"C"},
+    {id:1030,home:"bra",away:"hai",time:"22:00",venue:"Lincoln Financial Field",group:"C"},
+    {id:1031,home:"usa",away:"aus",time:"08:00",venue:"Lumen Field",group:"D"},
   ]},
-  {id:10,label:"Fecha 10",sub:"Sábado 20 de Junio, 2026",matches:[
-    {id:1032,home:"tur",away:"par",time:"00:00",venue:"Levi's Stadium",group:"D"},
-    {id:1033,home:"ger",away:"civ",time:"16:00",venue:"BMO Field",group:"E"},
-    {id:1034,home:"ecu",away:"cur",time:"20:00",venue:"Arrowhead Stadium",group:"E"},
-    {id:1035,home:"ned",away:"swe",time:"13:00",venue:"NRG Stadium",group:"F"},
+  {id:10,label:"Fecha 10",sub:"Viernes 16 de Mayo, 2026",matches:[
+    {id:1032,home:"tur",away:"par",time:"09:00",venue:"Levi's Stadium",group:"D"},
+    {id:1033,home:"ger",away:"civ",time:"10:00",venue:"BMO Field",group:"E"},
+    {id:1034,home:"ecu",away:"cur",time:"11:00",venue:"Arrowhead Stadium",group:"E"},
+    {id:1035,home:"ned",away:"swe",time:"12:00",venue:"NRG Stadium",group:"F"},
   ]},
-  {id:11,label:"Fecha 11",sub:"Domingo 21 de Junio, 2026",matches:[
-    {id:1036,home:"tun",away:"jpn",time:"00:00",venue:"Estadio BBVA",group:"F"},
-    {id:1037,home:"bel",away:"iri",time:"15:00",venue:"SoFi Stadium",group:"G"},
-    {id:1038,home:"nzl",away:"egy",time:"21:00",venue:"BC Place",group:"G"},
-    {id:1039,home:"esp",away:"ksa",time:"12:00",venue:"Mercedes-Benz Stadium",group:"H"},
-    {id:1040,home:"uru",away:"cpv",time:"18:00",venue:"Hard Rock Stadium",group:"H"},
+  {id:11,label:"Fecha 11",sub:"Viernes 16 de Mayo, 2026",matches:[
+    {id:1036,home:"tun",away:"jpn",time:"13:00",venue:"Estadio BBVA",group:"F"},
+    {id:1037,home:"bel",away:"iri",time:"14:00",venue:"SoFi Stadium",group:"G"},
+    {id:1038,home:"nzl",away:"egy",time:"15:00",venue:"BC Place",group:"G"},
+    {id:1039,home:"esp",away:"ksa",time:"16:00",venue:"Mercedes-Benz Stadium",group:"H"},
+    {id:1040,home:"uru",away:"cpv",time:"17:00",venue:"Hard Rock Stadium",group:"H"},
   ]},
-  {id:12,label:"Fecha 12",sub:"Lunes 22 de Junio, 2026",matches:[
-    {id:1041,home:"arg",away:"aut",time:"13:00",venue:"AT&T Stadium",group:"J"},
-    {id:1042,home:"fra",away:"irq",time:"17:00",venue:"Lincoln Financial Field",group:"I"},
+  {id:12,label:"Fecha 12",sub:"Viernes 16 de Mayo, 2026",matches:[
+    {id:1041,home:"arg",away:"aut",time:"18:00",venue:"AT&T Stadium",group:"J"},
+    {id:1042,home:"fra",away:"irq",time:"19:00",venue:"Lincoln Financial Field",group:"I"},
     {id:1043,home:"nor",away:"sen",time:"20:00",venue:"MetLife Stadium",group:"I"},
-    {id:1044,home:"jor",away:"alg",time:"23:00",venue:"Levi's Stadium",group:"J"},
+    {id:1044,home:"jor",away:"alg",time:"21:00",venue:"Levi's Stadium",group:"J"},
   ]},
-  {id:13,label:"Fecha 13",sub:"Martes 23 de Junio, 2026",matches:[
-    {id:1045,home:"por",away:"uzb",time:"13:00",venue:"NRG Stadium",group:"K"},
-    {id:1046,home:"eng",away:"gha",time:"16:00",venue:"Gillette Stadium",group:"L"},
-    {id:1047,home:"pan",away:"cro",time:"19:00",venue:"BMO Field",group:"L"},
-    {id:1048,home:"col",away:"cod",time:"22:00",venue:"Estadio Akron",group:"K"},
+  {id:13,label:"Fecha 13",sub:"Sábado 17 de Mayo, 2026",matches:[
+    {id:1045,home:"por",away:"uzb",time:"22:00",venue:"NRG Stadium",group:"K"},
+    {id:1046,home:"eng",away:"gha",time:"08:00",venue:"Gillette Stadium",group:"L"},
+    {id:1047,home:"pan",away:"cro",time:"09:00",venue:"BMO Field",group:"L"},
+    {id:1048,home:"col",away:"cod",time:"10:00",venue:"Estadio Akron",group:"K"},
   ]},
-  {id:14,label:"Fecha 14",sub:"Miércoles 24 de Junio, 2026",matches:[
-    {id:1049,home:"sui",away:"can",time:"15:00",venue:"BC Place",group:"B"},
-    {id:1050,home:"bih",away:"qat",time:"15:00",venue:"Lumen Field",group:"B"},
-    {id:1051,home:"sco",away:"bra",time:"18:00",venue:"Hard Rock Stadium",group:"C"},
-    {id:1052,home:"mar",away:"hai",time:"18:00",venue:"Mercedes-Benz Stadium",group:"C"},
-    {id:1053,home:"cze",away:"mex",time:"21:00",venue:"Estadio Azteca",group:"A"},
-    {id:1054,home:"rsa",away:"kor",time:"21:00",venue:"Estadio BBVA",group:"A"},
+  {id:14,label:"Fecha 14",sub:"Sábado 17 de Mayo, 2026",matches:[
+    {id:1049,home:"sui",away:"can",time:"11:00",venue:"BC Place",group:"B"},
+    {id:1050,home:"bih",away:"qat",time:"12:00",venue:"Lumen Field",group:"B"},
+    {id:1051,home:"sco",away:"bra",time:"13:00",venue:"Hard Rock Stadium",group:"C"},
+    {id:1052,home:"mar",away:"hai",time:"14:00",venue:"Mercedes-Benz Stadium",group:"C"},
+    {id:1053,home:"cze",away:"mex",time:"15:00",venue:"Estadio Azteca",group:"A"},
+    {id:1054,home:"rsa",away:"kor",time:"16:00",venue:"Estadio BBVA",group:"A"},
   ]},
-  {id:15,label:"Fecha 15",sub:"Jueves 25 de Junio, 2026",matches:[
-    {id:1055,home:"ger",away:"ecu",time:"16:00",venue:"MetLife Stadium",group:"E"},
-    {id:1056,home:"cur",away:"civ",time:"16:00",venue:"Lincoln Financial Field",group:"E"},
+  {id:15,label:"Fecha 15",sub:"Sábado 17 de Mayo, 2026",matches:[
+    {id:1055,home:"ger",away:"ecu",time:"17:00",venue:"MetLife Stadium",group:"E"},
+    {id:1056,home:"cur",away:"civ",time:"18:00",venue:"Lincoln Financial Field",group:"E"},
     {id:1057,home:"jpn",away:"swe",time:"19:00",venue:"AT&T Stadium",group:"F"},
-    {id:1058,home:"tun",away:"ned",time:"19:00",venue:"Arrowhead Stadium",group:"F"},
-    {id:1059,home:"tur",away:"usa",time:"22:00",venue:"SoFi Stadium",group:"D"},
+    {id:1058,home:"tun",away:"ned",time:"20:00",venue:"Arrowhead Stadium",group:"F"},
+    {id:1059,home:"tur",away:"usa",time:"21:00",venue:"SoFi Stadium",group:"D"},
     {id:1060,home:"par",away:"aus",time:"22:00",venue:"Levi's Stadium",group:"D"},
   ]},
-  {id:16,label:"Fecha 16",sub:"Viernes 26 de Junio, 2026",matches:[
-    {id:1061,home:"nor",away:"fra",time:"15:00",venue:"Gillette Stadium",group:"I"},
-    {id:1062,home:"sen",away:"irq",time:"15:00",venue:"BMO Field",group:"I"},
-    {id:1063,home:"uru",away:"esp",time:"20:00",venue:"Estadio Akron",group:"H"},
-    {id:1064,home:"cpv",away:"ksa",time:"20:00",venue:"NRG Stadium",group:"H"},
-    {id:1065,home:"bel",away:"nzl",time:"23:00",venue:"BC Place",group:"G"},
-    {id:1066,home:"egy",away:"iri",time:"23:00",venue:"Lumen Field",group:"G"},
+  {id:16,label:"Fecha 16",sub:"Sábado 17 de Mayo, 2026",matches:[
+    {id:1061,home:"nor",away:"fra",time:"08:00",venue:"Gillette Stadium",group:"I"},
+    {id:1062,home:"sen",away:"irq",time:"09:00",venue:"BMO Field",group:"I"},
+    {id:1063,home:"uru",away:"esp",time:"10:00",venue:"Estadio Akron",group:"H"},
+    {id:1064,home:"cpv",away:"ksa",time:"11:00",venue:"NRG Stadium",group:"H"},
+    {id:1065,home:"bel",away:"nzl",time:"12:00",venue:"BC Place",group:"G"},
+    {id:1066,home:"egy",away:"iri",time:"13:00",venue:"Lumen Field",group:"G"},
   ]},
-  {id:17,label:"Fecha 17",sub:"Sábado 27 de Junio, 2026",matches:[
-    {id:1067,home:"pan",away:"eng",time:"17:00",venue:"MetLife Stadium",group:"L"},
-    {id:1068,home:"cro",away:"gha",time:"17:00",venue:"Lincoln Financial Field",group:"L"},
-    {id:1069,home:"col",away:"por",time:"19:30",venue:"Hard Rock Stadium",group:"K"},
-    {id:1070,home:"cod",away:"uzb",time:"19:30",venue:"Mercedes-Benz Stadium",group:"K"},
-    {id:1071,home:"jor",away:"arg",time:"22:00",venue:"AT&T Stadium",group:"J"},
-    {id:1072,home:"alg",away:"aut",time:"22:00",venue:"Arrowhead Stadium",group:"J"},
+  {id:17,label:"Fecha 17",sub:"Sábado 17 de Mayo, 2026",matches:[
+    {id:1067,home:"pan",away:"eng",time:"14:00",venue:"MetLife Stadium",group:"L"},
+    {id:1068,home:"cro",away:"gha",time:"15:00",venue:"Lincoln Financial Field",group:"L"},
+    {id:1069,home:"col",away:"por",time:"16:00",venue:"Hard Rock Stadium",group:"K"},
+    {id:1070,home:"cod",away:"uzb",time:"17:00",venue:"Mercedes-Benz Stadium",group:"K"},
+    {id:1071,home:"jor",away:"arg",time:"18:00",venue:"AT&T Stadium",group:"J"},
+    {id:1072,home:"alg",away:"aut",time:"19:00",venue:"Arrowhead Stadium",group:"J"},
   ]},
 ];
 const ALL_MATCHES = FECHAS.flatMap(f=>f.matches);
@@ -221,8 +387,9 @@ const emptyScores = () => Object.fromEntries(ALL_MATCHES.map(m=>[m.id,{home:"",a
 const PAGE_SIZE = 3;
 
 // --- LOCK ---------------------------------------------------------------------
-const KICKOFF_UTC={1001:Date.UTC(2026,5,11,19,0),1002:Date.UTC(2026,5,12,2,0),1003:Date.UTC(2026,5,12,19,0),1004:Date.UTC(2026,5,13,1,0),1005:Date.UTC(2026,5,13,19,0),1006:Date.UTC(2026,5,13,22,0),1007:Date.UTC(2026,5,14,1,0),1008:Date.UTC(2026,5,14,4,0),1009:Date.UTC(2026,5,14,17,0),1010:Date.UTC(2026,5,14,23,0),1011:Date.UTC(2026,5,14,20,0),1012:Date.UTC(2026,5,15,2,0),1013:Date.UTC(2026,5,15,19,0),1014:Date.UTC(2026,5,16,1,0),1015:Date.UTC(2026,5,15,16,0),1016:Date.UTC(2026,5,15,22,0),1017:Date.UTC(2026,5,16,19,0),1018:Date.UTC(2026,5,16,22,0),1019:Date.UTC(2026,5,17,1,0),1020:Date.UTC(2026,5,17,4,0),1021:Date.UTC(2026,5,17,17,0),1022:Date.UTC(2026,5,18,2,0),1023:Date.UTC(2026,5,17,20,0),1024:Date.UTC(2026,5,17,23,0),1025:Date.UTC(2026,5,18,16,0),1026:Date.UTC(2026,5,19,1,0),1027:Date.UTC(2026,5,18,19,0),1028:Date.UTC(2026,5,18,22,0),1029:Date.UTC(2026,5,19,22,0),1030:Date.UTC(2026,5,20,0,30),1031:Date.UTC(2026,5,19,19,0),1032:Date.UTC(2026,5,20,4,0),1033:Date.UTC(2026,5,20,20,0),1034:Date.UTC(2026,5,21,0,0),1035:Date.UTC(2026,5,20,17,0),1036:Date.UTC(2026,5,21,4,0),1037:Date.UTC(2026,5,21,19,0),1038:Date.UTC(2026,5,22,1,0),1039:Date.UTC(2026,5,21,16,0),1040:Date.UTC(2026,5,21,22,0),1041:Date.UTC(2026,5,22,17,0),1042:Date.UTC(2026,5,22,21,0),1043:Date.UTC(2026,5,23,0,0),1044:Date.UTC(2026,5,23,3,0),1045:Date.UTC(2026,5,23,17,0),1046:Date.UTC(2026,5,23,20,0),1047:Date.UTC(2026,5,23,23,0),1048:Date.UTC(2026,5,24,2,0),1049:Date.UTC(2026,5,24,19,0),1050:Date.UTC(2026,5,24,19,0),1051:Date.UTC(2026,5,24,22,0),1052:Date.UTC(2026,5,24,22,0),1053:Date.UTC(2026,5,25,1,0),1054:Date.UTC(2026,5,25,1,0),1055:Date.UTC(2026,5,25,20,0),1056:Date.UTC(2026,5,25,20,0),1057:Date.UTC(2026,5,25,23,0),1058:Date.UTC(2026,5,25,23,0),1059:Date.UTC(2026,5,26,2,0),1060:Date.UTC(2026,5,26,2,0),1061:Date.UTC(2026,5,26,19,0),1062:Date.UTC(2026,5,26,19,0),1063:Date.UTC(2026,5,27,0,0),1064:Date.UTC(2026,5,27,0,0),1065:Date.UTC(2026,5,27,3,0),1066:Date.UTC(2026,5,27,3,0),1067:Date.UTC(2026,5,27,21,0),1068:Date.UTC(2026,5,27,21,0),1069:Date.UTC(2026,5,27,23,30),1070:Date.UTC(2026,5,27,23,30),1071:Date.UTC(2026,5,28,2,0),1072:Date.UTC(2026,5,28,2,0)};
-const isLocked = id => { const k=KICKOFF_UTC[id]; return k?Date.now()>=k-10*60*1000:false; };
+const KICKOFF_UTC={1001:Date.UTC(2026,4,14,12,0),1002:Date.UTC(2026,4,14,13,0),1003:Date.UTC(2026,4,14,14,0),1004:Date.UTC(2026,4,14,15,0),1005:Date.UTC(2026,4,14,16,0),1006:Date.UTC(2026,4,14,17,0),1007:Date.UTC(2026,4,14,18,0),1008:Date.UTC(2026,4,14,19,0),1009:Date.UTC(2026,4,14,20,0),1010:Date.UTC(2026,4,14,21,0),1011:Date.UTC(2026,4,14,22,0),1012:Date.UTC(2026,4,14,23,0),1013:Date.UTC(2026,4,15,0,0),1014:Date.UTC(2026,4,15,1,0),1015:Date.UTC(2026,4,15,2,0),1016:Date.UTC(2026,4,15,12,0),1017:Date.UTC(2026,4,15,13,0),1018:Date.UTC(2026,4,15,14,0),1019:Date.UTC(2026,4,15,15,0),1020:Date.UTC(2026,4,15,16,0),1021:Date.UTC(2026,4,15,17,0),1022:Date.UTC(2026,4,15,18,0),1023:Date.UTC(2026,4,15,19,0),1024:Date.UTC(2026,4,15,20,0),1025:Date.UTC(2026,4,15,21,0),1026:Date.UTC(2026,4,15,22,0),1027:Date.UTC(2026,4,15,23,0),1028:Date.UTC(2026,4,16,0,0),1029:Date.UTC(2026,4,16,1,0),1030:Date.UTC(2026,4,16,2,0),1031:Date.UTC(2026,4,16,12,0),1032:Date.UTC(2026,4,16,13,0),1033:Date.UTC(2026,4,16,14,0),1034:Date.UTC(2026,4,16,15,0),1035:Date.UTC(2026,4,16,16,0),1036:Date.UTC(2026,4,16,17,0),1037:Date.UTC(2026,4,16,18,0),1038:Date.UTC(2026,4,16,19,0),1039:Date.UTC(2026,4,16,20,0),1040:Date.UTC(2026,4,16,21,0),1041:Date.UTC(2026,4,16,22,0),1042:Date.UTC(2026,4,16,23,0),1043:Date.UTC(2026,4,17,0,0),1044:Date.UTC(2026,4,17,1,0),1045:Date.UTC(2026,4,17,2,0),1046:Date.UTC(2026,4,17,12,0),1047:Date.UTC(2026,4,17,13,0),1048:Date.UTC(2026,4,17,14,0),1049:Date.UTC(2026,4,17,15,0),1050:Date.UTC(2026,4,17,16,0),1051:Date.UTC(2026,4,17,17,0),1052:Date.UTC(2026,4,17,18,0),1053:Date.UTC(2026,4,17,19,0),1054:Date.UTC(2026,4,17,20,0),1055:Date.UTC(2026,4,17,21,0),1056:Date.UTC(2026,4,17,22,0),1057:Date.UTC(2026,4,17,23,0),1058:Date.UTC(2026,4,18,0,0),1059:Date.UTC(2026,4,18,1,0),1060:Date.UTC(2026,4,18,2,0),1061:Date.UTC(2026,4,18,12,0),1062:Date.UTC(2026,4,18,13,0),1063:Date.UTC(2026,4,18,14,0),1064:Date.UTC(2026,4,18,15,0),1065:Date.UTC(2026,4,18,16,0),1066:Date.UTC(2026,4,18,17,0),1067:Date.UTC(2026,4,18,18,0),1068:Date.UTC(2026,4,18,19,0),1069:Date.UTC(2026,4,18,20,0),1070:Date.UTC(2026,4,18,21,0),1071:Date.UTC(2026,4,18,22,0),1072:Date.UTC(2026,4,18,23,0)};
+const KO_KICKOFF={"r32_1":Date.UTC(2026,4,19,0,0),"r32_2":Date.UTC(2026,4,19,1,0),"r32_3":Date.UTC(2026,4,19,2,0),"r32_4":Date.UTC(2026,4,19,12,0),"r32_5":Date.UTC(2026,4,19,13,0),"r32_6":Date.UTC(2026,4,19,14,0),"r32_7":Date.UTC(2026,4,19,15,0),"r32_8":Date.UTC(2026,4,19,16,0),"r32_9":Date.UTC(2026,4,19,17,0),"r32_10":Date.UTC(2026,4,19,18,0),"r32_11":Date.UTC(2026,4,19,19,0),"r32_12":Date.UTC(2026,4,19,20,0),"r32_13":Date.UTC(2026,4,19,21,0),"r32_14":Date.UTC(2026,4,19,22,0),"r32_15":Date.UTC(2026,4,19,23,0),"r32_16":Date.UTC(2026,4,20,0,0),"r16_1":Date.UTC(2026,4,20,1,0),"r16_2":Date.UTC(2026,4,20,2,0),"r16_3":Date.UTC(2026,4,20,12,0),"r16_4":Date.UTC(2026,4,20,13,0),"r16_5":Date.UTC(2026,4,20,14,0),"r16_6":Date.UTC(2026,4,20,15,0),"r16_7":Date.UTC(2026,4,20,16,0),"r16_8":Date.UTC(2026,4,20,17,0),"qf_1":Date.UTC(2026,4,20,18,0),"qf_2":Date.UTC(2026,4,20,19,0),"qf_3":Date.UTC(2026,4,20,20,0),"qf_4":Date.UTC(2026,4,20,21,0),"sf_1":Date.UTC(2026,4,20,22,0),"sf_2":Date.UTC(2026,4,20,23,0),"final_1":Date.UTC(2026,4,21,0,0)};
+const isLocked = id => { const k=KICKOFF_UTC[id]||KO_KICKOFF[id]; return k?Date.now()>=k-10*60*1000:false; };
 
 // --- SCORING ------------------------------------------------------------------
 const PTS_CAMPEON=10,PTS_SUBCAMPEON=7,PTS_GOLEADOR=10,PTS_CLASIFICADO=1,PTS_TERCERO=2;
@@ -776,15 +943,11 @@ function AdminPanel({onLogout}) {
   const [saved,setSaved]=useState(false);
 
   useEffect(()=>{
-    sGet("real:scores").then(v=>{if(v)setRes(JSON.parse(v));}).catch(()=>{});
-    sGet("real:specials").then(v=>{if(v)setRsp(JSON.parse(v));}).catch(()=>{});
-    sGet("real:knockoutResults").then(v=>{if(v)setKoRes(JSON.parse(v));}).catch(()=>{});
+    sGetRealResults().then(r=>{if(r){if(Object.keys(r.scores||{}).length)setRes(p=>({...p,...r.scores}));if(r.specials&&Object.keys(r.specials).length)setRsp(p=>({...p,...r.specials}));if(r.knockoutResults&&Object.keys(r.knockoutResults).length)setKoRes(r.knockoutResults);}}).catch(()=>{});
   },[]);
 
   const save=async()=>{
-    await sSet("real:scores",JSON.stringify(res),true);
-    await sSet("real:specials",JSON.stringify(rsp),true);
-    await sSet("real:knockoutResults",JSON.stringify(koRes),true);
+    await sSetRealResults(res, rsp, koRes);
     setSaved(true);setTimeout(()=>setSaved(false),2000);
   };
 
@@ -820,17 +983,14 @@ function AdminPanel({onLogout}) {
             <button onClick={save} style={{...S.btn,padding:"0.5rem 1rem",background:`linear-gradient(90deg,#f43f5e,#fb7185)`,color:"white",fontSize:"0.75rem",textTransform:"uppercase",letterSpacing:"0.1em"}}>Guardar</button>
             <button onClick={async()=>{
               if(!window.confirm("¿Borrar TODO? Usuarios, pronósticos y resultados. Esta acción no se puede deshacer.")) return;
-              const keys = await sList("");
-              await Promise.all(keys.map(k=>sDel(k)));
+              await sDeleteAll();
               alert("Reset total completado. Recargá la página.");
             }} style={{...S.btn,padding:"0.5rem 0.75rem",background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.4)",color:"#fca5a5",fontSize:"0.7rem",textTransform:"uppercase"}} title="Borra absolutamente todo">
               🗑️ Reset Total
             </button>
             <button onClick={async()=>{
               if(!window.confirm("¿Borrar pronósticos de usuarios y resultados del admin? Los usuarios registrados se mantienen.")) return;
-              const keys = await sList("");
-              const keep = k => k.startsWith("user:");
-              await Promise.all(keys.filter(k=>!keep(k)).map(k=>sDel(k)));
+              await sDeleteGameData();
               setRes(emptyScores());
               setRsp({campeon:"",subcampeon:"",goleador:"",goleadorDesignado:{name:"",goals:""},arqueroDesignado:{name:"",cleanSheets:""},clasificados:{grupos:{}}});
               setKoRes({});
@@ -970,7 +1130,7 @@ function AdminPanel({onLogout}) {
               );
             });
           })()}
-          <button onClick={()=>{sSet("real:knockoutResults",JSON.stringify(koRes),true);setSaved(true);setTimeout(()=>setSaved(false),2000);}}
+          <button onClick={()=>{sSetRealResults(res,rsp,koRes).then(()=>{setSaved(true);setTimeout(()=>setSaved(false),2000);});}}
             style={{...S.btn,marginTop:"0.5rem",padding:"0.5rem 1rem",background:`linear-gradient(90deg,${C.violet},#c4b5fd)`,color:"#000",fontSize:"0.75rem",fontWeight:900,textTransform:"uppercase"}}>
             Guardar Fases Finales
           </button>
@@ -1163,11 +1323,8 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
     let alive=true;
     (async()=>{
       try{
-        const keys=await sList("fscores:");
-        const rows=await Promise.all(keys.map(async k=>{
-          const un=k.replace("fscores:","");
-          const sv=await sGet(k);
-          const ufs=sv?JSON.parse(sv):{};
+        const allFSc = await sGetAllFScores();
+        const rows=await Promise.all(Object.entries(allFSc).map(async ([un,ufs])=>{
           let hits=0;
           Object.entries(krReal).forEach(([mid,real])=>{
             const pred=ufs[mid];if(!pred)return;
@@ -1321,14 +1478,16 @@ function RankingModal({onClose, currentUser, realRes}) {
     let alive=true;
     (async()=>{
       try {
-        const [rsv,rspv]=await Promise.all([sGet("real:scores"),sGet("real:specials")]);
-        const rr=(rsv||rspv)?{scores:rsv?JSON.parse(rsv):{},specials:rspv?JSON.parse(rspv):{}}:null;
-        const keys=await sList("scores:");
-        const data=await Promise.all(keys.filter(k=>!k.includes("admin")).map(async k=>{
-          const un=k.replace("scores:","");
-          const [sv,spv,jkv,fsv,fjkv]=await Promise.all([sGet(k),sGet(`specials:${un}`),sGet(`jokers:${un}`),sGet(`fscores:${un}`),sGet(`fjokers:${un}`)]);
-          const sc=sv?JSON.parse(sv):{}, usp=spv?JSON.parse(spv):{}, jk=jkv?JSON.parse(jkv):[];
-          const fsc=fsv?JSON.parse(fsv):{}, fjk=fjkv?JSON.parse(fjkv):[];
+        const rr = await sGetRealResults();
+        const [allSc,allSp,allJk,allFSc,allFJk] = await Promise.all([
+          sGetAllScores(), sbFetch("specials?select=username,data"),
+          sGetAllJokers(), sGetAllFScores(), sGetAllFJokers()
+        ]);
+        const spMap = {};(allSp||[]).forEach(r=>{spMap[r.username]=r.data||{};});
+        const users = Object.keys(allSc).filter(u=>u!=="admin");
+        const data=await Promise.all(users.map(async un=>{
+          const sc=allSc[un]||{}, usp=spMap[un]||{}, jk=allJk[un]||[];
+          const fsc=allFSc[un]||{}, fjk=allFJk[un]||[];
 
           // Phase groups points
           let grpPts=0;
@@ -1373,6 +1532,15 @@ function RankingModal({onClose, currentUser, realRes}) {
       if(alive) setLoading(false);
     })();
     return()=>{alive=false;};
+  },[]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(()=>{
+    const t = setInterval(()=>{
+      setLoading(true);
+      setRows([]);
+    }, 30000);
+    return()=>clearInterval(t);
   },[]);
 
   const icons=["🥇","🥈","🥉"], podCol=[C.gold,"#94a3b8","#b45309"];
@@ -1483,18 +1651,21 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser}) {
       try{
         const [rsv,rspv]=await Promise.all([sGet("real:scores"),sGet("real:specials")]);
         const rr=(rsv||rspv)?{scores:rsv?JSON.parse(rsv):{},specials:rspv?JSON.parse(rspv):{}}:null;
-        const keys=await sList("scores:");
-        const sc={},jk={};
-        await Promise.all(keys.map(async k=>{
-          const u=k.replace("scores:","");
-          const [sv,jv]=await Promise.all([sGet(k),sGet(`jokers:${u}`)]);
-          if(sv)sc[u]=JSON.parse(sv); if(jv)jk[u]=JSON.parse(jv);
-        }));
+        const [sc,jk] = await Promise.all([sGetAllScores(), sGetAllJokers()]);
         if(alive)setData({sc,jk,rr});
       }catch(_){}
       if(alive)setLoading(false);
     })();
     return()=>{alive=false;};
+  },[]);
+
+  // Auto-refresh every 20 seconds
+  useEffect(()=>{
+    const t = setInterval(()=>{
+      setData(null);
+      setLoading(true);
+    }, 20000);
+    return()=>clearInterval(t);
   },[]);
 
   const goTo=i=>setMuroIdx(Math.max(0,Math.min(i,nav.length-1)));
@@ -1591,6 +1762,112 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser}) {
   );
 }
 
+// --- RULES MODAL --------------------------------------------------------------
+function RulesModal({onClose}) {
+  const bo = `1px solid ${C.border}`;
+  const Section = ({icon,title,children}) => (
+    <div style={{marginBottom:"1.25rem"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.5rem"}}>
+        <span style={{fontSize:"1.1rem"}}>{icon}</span>
+        <span style={{fontSize:"0.85rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:"white"}}>{title}</span>
+      </div>
+      <div style={{paddingLeft:"1.6rem"}}>{children}</div>
+    </div>
+  );
+  const Row = ({label,value,color}) => (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0.35rem 0",borderBottom:bo}}>
+      <span style={{fontSize:"0.78rem",color:C.muted}}>{label}</span>
+      <span style={{fontSize:"0.78rem",fontWeight:900,color:color||C.gold}}>{value}</span>
+    </div>
+  );
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"1rem",paddingTop:"3rem"}}>
+      <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(4px)"}}/>
+      <div style={{position:"relative",width:"100%",maxWidth:"540px",maxHeight:"86vh",display:"flex",flexDirection:"column",background:"#0a1a0a",border:`1px solid ${C.sky}40`,borderRadius:"1.25rem",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.6)"}}>
+
+        {/* Header */}
+        <div style={{padding:"0.875rem 1rem",borderBottom:bo,display:"flex",alignItems:"center",gap:"0.5rem",flexShrink:0,background:"rgba(56,189,248,0.06)"}}>
+          <span style={{fontSize:"1.25rem"}}>📋</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:"0.95rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:C.sky}}>Reglas del Prode</div>
+            <div style={{fontSize:"0.6rem",color:C.muted}}>Mundial 2026 · USA · México · Canadá</div>
+          </div>
+          <button onClick={onClose} style={{...S.btn,width:"1.5rem",height:"1.5rem",borderRadius:"50%",background:"rgba(255,255,255,0.08)",color:C.muted,border:"none",fontSize:"0.85rem"}}>✕</button>
+        </div>
+
+        {/* Content */}
+        <div style={{overflowY:"auto",flex:1,padding:"1rem"}}>
+
+          <Section icon="⚽" title="Puntuación por Partido">
+            <Row label="Resultado exacto (ej: 2-1 acertado)" value="+3 pts"/>
+            <Row label="Ganador / Empate correcto" value="+3 pts"/>
+            <Row label="Goles del local acertados" value="+1 pt"/>
+            <Row label="Goles del visitante acertados" value="+1 pt"/>
+            <div style={{marginTop:"0.5rem",padding:"0.4rem 0.6rem",background:"rgba(251,191,36,0.08)",border:`1px solid rgba(251,191,36,0.2)`,borderRadius:"0.5rem"}}>
+              <span style={{fontSize:"0.72rem",color:C.gold,fontWeight:700}}>Máximo por partido: 8 pts · Con comodín 🃏: hasta 16 pts</span>
+            </div>
+          </Section>
+
+          <Section icon="🃏" title="Comodines">
+            <div style={{fontSize:"0.78rem",color:C.muted,lineHeight:1.6}}>
+              Cada usuario tiene <span style={{color:"white",fontWeight:900}}>2 comodines por fase</span> (Fase Grupos y Fases Finales son independientes — no se acumulan).<br/>
+              Al activar un comodín en un partido, <span style={{color:C.gold,fontWeight:900}}>los puntos obtenidos se duplican</span>.
+            </div>
+          </Section>
+
+          <Section icon="⭐" title="Pronósticos Especiales">
+            <Row label="Campeón del Mundial" value="+10 pts"/>
+            <Row label="Subcampeón" value="+7 pts"/>
+            <Row label="Goleador del torneo" value="+10 pts"/>
+            <Row label="Goleador Designado" value="+1 pt por gol"/>
+            <Row label="Arquero Designado" value="+1 pt por arco en 0"/>
+          </Section>
+
+          <Section icon="🎯" title="Clasificados a 16avos">
+            <div style={{fontSize:"0.78rem",color:C.muted,lineHeight:1.6,marginBottom:"0.5rem"}}>
+              Elegís hasta <span style={{color:"white",fontWeight:900}}>3 equipos por grupo</span> (máximo 32 en total, 8 terceros máximo).
+            </div>
+            <Row label="1° y 2° de grupo acertados" value="+1 pt c/u"/>
+            <Row label="Mejor tercero acertado" value="+2 pts"/>
+          </Section>
+
+          <Section icon="🏆" title="Fases Finales">
+            <div style={{fontSize:"0.78rem",color:C.muted,lineHeight:1.6,marginBottom:"0.5rem"}}>
+              El sistema de puntuación es el mismo que en fase de grupos.<br/>
+              <span style={{color:C.rose,fontWeight:700}}>Solo se cuentan los 90 minutos + alargue. Los penales NO suman.</span>
+            </div>
+            <Row label="16avos · 8avos · Cuartos · Semis · Final" value="Mismo sistema"/>
+          </Section>
+
+          <Section icon="👑" title="Rey de Llaves">
+            <div style={{fontSize:"0.78rem",color:C.muted,lineHeight:1.6,marginBottom:"0.5rem"}}>
+              Se cuenta quién acertó más <span style={{color:"white",fontWeight:900}}>resultados (ganador)</span> en toda la fase final.
+            </div>
+            <Row label="🥇 Mayor cantidad de aciertos" value="+10 pts" color={C.gold}/>
+            <Row label="🥈 Segundo lugar" value="+6 pts" color="#94a3b8"/>
+            <Row label="🥉 Tercer lugar" value="+3 pts" color="#b45309"/>
+          </Section>
+
+          <Section icon="🔒" title="Cierre de Pronósticos">
+            <div style={{fontSize:"0.78rem",color:C.muted,lineHeight:1.6}}>
+              Cada partido se bloquea automáticamente <span style={{color:C.rose,fontWeight:700}}>10 minutos antes del kickoff</span> (hora boliviana BOT, UTC-4).<br/>
+              Una vez cerrado, no se puede modificar el pronóstico.<br/>
+              El <span style={{color:"white",fontWeight:700}}>Muro de Pronósticos 👁️</span> se activa cuando se cierra el primer partido — podés ver los pronósticos de todos los jugadores.
+            </div>
+          </Section>
+
+          <div style={{padding:"0.75rem",background:"rgba(56,189,248,0.06)",border:`1px solid rgba(56,189,248,0.2)`,borderRadius:"0.75rem",marginTop:"0.5rem"}}>
+            <div style={{fontSize:"0.72rem",color:C.sky,fontWeight:700,marginBottom:"0.25rem"}}>💡 Tip</div>
+            <div style={{fontSize:"0.72rem",color:C.muted,lineHeight:1.5}}>
+              Usá tus comodines en partidos donde estés muy seguro del resultado — podés ganar hasta 16 puntos en un solo partido.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- LOGIN --------------------------------------------------------------------
 function Login({onLogin}) {
   const [u,setU]=useState(""),[p,setP]=useState(""),[err,setErr]=useState(""),[loading,setL]=useState(false);
@@ -1600,16 +1877,17 @@ function Login({onLogin}) {
     if(pw.length<3){setErr("Contraseña mínimo 3 caracteres.");return;}
     setL(true);setErr("");
     try {
-      const ex=await sGet(`user:${un}`);
+      const ex = await sGetUser(un);
       if(ex){
-        const d=JSON.parse(ex);
-        if(d.password!==pw){setErr("Contraseña incorrecta.");setL(false);return;}
-        const sv=await sGet(`scores:${un}`);
-        onLogin(un,sv?JSON.parse(sv):null);
+        if(ex.password!==pw){setErr("Contraseña incorrecta.");setL(false);return;}
       } else {
-        await sSet(`user:${un}`,JSON.stringify({username:un,password:pw}));
-        onLogin(un,null);
+        await sSetUser(un, pw);
       }
+      const [sc,sp,jk,fsc,fjk] = await Promise.all([
+        sGetScores(un), sGetSpecials(un), sGetJokers(un),
+        sGetFScores(un), sGetFJokers(un)
+      ]);
+      onLogin(un, sc, sp, jk, fsc, fjk);
     } catch(_){onLogin(u.trim().toLowerCase(),null);}
     setL(false);
   };
@@ -1651,9 +1929,10 @@ export default function App() {
   const [ready,setReady]   = useState(false);
   const [user,setUser]     = useState(null);
   const [view,setView]     = useState("grupos"); // "grupos" | "finales"
+  const [rulesOpen,setRulesOpen]   = useState(false);
   const [muroOpen,setMuroOpen]     = useState(false);
   const [muroIdx,setMuroIdx]       = useState(0);
-  const [rankModalOpen,setRankModal] = useState(false); // current match index in muro
+  const [rankModalOpen,setRankModal] = useState(false);
   const [subRound,setSubRound] = useState(null); // null = nothing open
   const [fScores,setFScores]   = useState({}); // knockout scores keyed by matchId
   const [fJokers,setFJokers]   = useState([]); // max 2 per user for finales
@@ -1674,20 +1953,24 @@ export default function App() {
     let alive=true;
     const load=async()=>{
       try {
-        const [sv,rsv,rspv]=await Promise.all([sGet("session:current"),sGet("real:scores"),sGet("real:specials")]);
+        // Load session from localStorage
+        const savedUser = localStorage.getItem("prode_user");
+        const rr = await sGetRealResults().catch(()=>null);
         if(!alive) return;
-        const krsv = await sGet("real:knockoutResults").catch(()=>null);
-        if(rsv||rspv||krsv) setReal({scores:rsv?JSON.parse(rsv):{},specials:rspv?JSON.parse(rspv):{},knockoutResults:krsv?JSON.parse(krsv):{}});
-        if(sv){
-          const {username}=JSON.parse(sv);
-          const [uSv,uSpv,uJkv,uFSv,uFJv]=await Promise.all([sGet(`scores:${username}`),sGet(`specials:${username}`),sGet(`jokers:${username}`),sGet(`fscores:${username}`),sGet(`fjokers:${username}`)]);
+        if(rr) setReal(rr);
+        if(savedUser){
+          const username = savedUser;
+          const [sc,sp,jk,fsc,fjk] = await Promise.all([
+            sGetScores(username), sGetSpecials(username), sGetJokers(username),
+            sGetFScores(username), sGetFJokers(username)
+          ]);
           if(!alive) return;
           setUser(username);
-          if(uSv) setScores(JSON.parse(uSv));
-          if(uSpv) setSp(JSON.parse(uSpv));
-          if(uJkv) setJokers(JSON.parse(uJkv));
-          if(uFSv) setFScores(JSON.parse(uFSv));
-          if(uFJv) setFJokers(JSON.parse(uFJv));
+          if(sc) setScores(sc);
+          if(sp) setSp(sp);
+          if(jk) setJokers(jk);
+          if(fsc) setFScores(fsc);
+          if(fjk) setFJokers(fjk.map?fjk.map(String):fjk);
         }
       } catch(_){}
       if(alive) setReady(true);
@@ -1697,43 +1980,74 @@ export default function App() {
     return()=>{alive=false;clearTimeout(t);};
   },[]);
 
-  useEffect(()=>{if(!user)return;const t=setTimeout(async()=>{await sSet(`scores:${user}`,JSON.stringify(scores));setSaveOk(true);setTimeout(()=>setSaveOk(false),1500);},600);return()=>clearTimeout(t);},[scores,user]);
-  useEffect(()=>{if(!user)return;const t=setTimeout(()=>sSet(`specials:${user}`,JSON.stringify(sp)),600);return()=>clearTimeout(t);},[sp,user]);
-  useEffect(()=>{if(!user)return;const t=setTimeout(()=>sSet(`jokers:${user}`,JSON.stringify(jokers)),600);return()=>clearTimeout(t);},[jokers,user]);
-  useEffect(()=>{if(!user)return;const t=setTimeout(()=>sSet(`fscores:${user}`,JSON.stringify(fScores)),600);return()=>clearTimeout(t);},[fScores,user]);
-  useEffect(()=>{if(!user)return;const t=setTimeout(()=>sSet(`fjokers:${user}`,JSON.stringify(fJokers)),600);return()=>clearTimeout(t);},[fJokers,user]);
+  // Auto-save scores - save individual score on change
+  const handleScore=useCallback((id,side,v)=>{
+    setScores(p=>{
+      const ns={...p,[id]:{...p[id],[side]:v}};
+      if(user) sSetScore(user,id,side==="home"?v:ns[id]?.home||"",side==="away"?v:ns[id]?.away||"");
+      return ns;
+    });
+    setSaveOk(true);setTimeout(()=>setSaveOk(false),1500);
+  },[user]);
+  // Save specials debounced
+  useEffect(()=>{if(!user)return;const t=setTimeout(()=>sSetSpecials(user,sp),800);return()=>clearTimeout(t);},[sp,user]);
+  // Save jokers
+  useEffect(()=>{if(!user)return;const t=setTimeout(()=>sSetJokers(user,jokers),800);return()=>clearTimeout(t);},[jokers,user]);
+  // Save fjokers
+  useEffect(()=>{if(!user)return;const t=setTimeout(()=>sSetFJokers(user,fJokers),800);return()=>clearTimeout(t);},[fJokers,user]);
+  // Save fScores - batch save all knockout scores
+  useEffect(()=>{
+    if(!user||!Object.keys(fScores).length) return;
+    const t=setTimeout(async()=>{
+      const rows=Object.entries(fScores).map(([id,s])=>({username:user,match_id:String(id),home:s.home||"",away:s.away||""}));
+      if(rows.length) await sbFetch("fscores","POST",rows);
+    },800);
+    return()=>clearTimeout(t);
+  },[fScores,user]);
 
-  const handleLogin=useCallback(async(username,savedScores)=>{
-    try {
-      const [spv,jkv]=await Promise.all([sGet(`specials:${username}`),sGet(`jokers:${username}`)]);
-      setUser(username);
-      if(savedScores) setScores(savedScores);
-      if(spv) setSp(JSON.parse(spv));
-      if(jkv) setJokers(JSON.parse(jkv));
-      sSet("session:current",JSON.stringify({username}));
-    } catch(_){setUser(username);sSet("session:current",JSON.stringify({username}));}
+
+
+
+
+
+
+  const handleJoker=useCallback(id=>{
+    setJokers(p=>{
+      const nj=p.includes(id)?p.filter(x=>x!==id):p.length>=2?p:[...p,id];
+      if(user) sSetJokers(user,nj);
+      return nj;
+    });
+  },[user]);
+
+  const handleLogin=useCallback(async(un,sc,sp,jk,fsc,fjk)=>{
+    setUser(un);
+    if(sc) setScores(sc);
+    if(sp) setSp(p=>({...p,...sp}));
+    if(jk) setJokers(jk);
+    if(fsc) setFScores(fsc);
+    if(fjk) setFJokers(fjk.map?fjk.map(String):fjk);
+    localStorage.setItem("prode_user", un);
   },[]);
 
-  const handleLogout=useCallback(async()=>{
-    await sDel("session:current").catch(()=>{});
-    setUser(null);setScores(emptyScores());setSp({campeon:"",subcampeon:"",goleador:"",goleadorDesignado:"",arqueroDesignado:"",clasificados:{grupos:{}}});
-    setJokers([]);setFScores({});setFJokers([]);setOpenF(null);setOpenG(null);setVis(PAGE_SIZE);
+  const handleLogout=useCallback(()=>{
+    localStorage.removeItem("prode_user");
+    setUser(null);
+    setScores(emptyScores());
+    setSp({campeon:"",subcampeon:"",goleador:"",goleadorDesignado:"",arqueroDesignado:"",clasificados:{grupos:{}}});
+    setJokers([]);setFScores({});setFJokers([]);
+    setOpenF(null);setOpenG(null);setVis(PAGE_SIZE);setSubRound(null);
   },[]);
-
-  const handleScore=useCallback((id,side,v)=>setScores(p=>({...p,[id]:{...p[id],[side]:v}})),[]);
-  const handleJoker=useCallback(id=>setJokers(p=>p.includes(id)?p.filter(x=>x!==id):p.length>=2?p:[...p,id]),[]);
 
   const loadRanking=useCallback(async()=>{
     setRankLoad(true);
     try {
-      const [rsv,rspv]=await Promise.all([sGet("real:scores"),sGet("real:specials")]);
-      const rr=(rsv||rspv)?{scores:rsv?JSON.parse(rsv):{},specials:rspv?JSON.parse(rspv):{}}:null;
+      const rr = await sGetRealResults();
       if(rr) setReal(rr);
-      const keys=await sList("scores:");
-      const rows=await Promise.all(keys.filter(k=>!k.includes("admin")).map(async k=>{
-        const un=k.replace("scores:","");
-        const [sv,spv,jkv]=await Promise.all([sGet(k),sGet(`specials:${un}`),sGet(`jokers:${un}`)]);
-        const sc=sv?JSON.parse(sv):{},usp=spv?JSON.parse(spv):{},jk=jkv?JSON.parse(jkv):[];
+      const [allSc,spData,allJk]=await Promise.all([sGetAllScores(),sbFetch("specials?select=username,data"),sGetAllJokers()]);
+      const spMap={};(spData||[]).forEach(r=>{spMap[r.username]=r.data||{};});
+      const users=Object.keys(allSc).filter(u=>u!=="admin");
+      const rows=await Promise.all(users.map(async un=>{
+        const sc=allSc[un]||{},usp=spMap[un]||{},jk=allJk[un]||[];
         const filled=ALL_MATCHES.filter(m=>{const s=sc[m.id];return s&&!isNaN(parseInt(s.home))&&!isNaN(parseInt(s.away));}).length;
         let pts=null;
         if(rr){const rObj=Object.fromEntries(ALL_MATCHES.map(m=>[m.id,rr.scores?.[m.id]]));pts=calcPoints(sc,usp,{...rObj,...rr.specials},jk);}
@@ -1774,6 +2088,12 @@ export default function App() {
           <div style={{display:"flex",alignItems:"center",gap:"0.5rem",flexWrap:"wrap"}}>
             <div style={{width:"1.75rem",height:"1.75rem",borderRadius:"0.5rem",background:"rgba(251,191,36,0.2)",border:"1px solid rgba(251,191,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.75rem"}}>{user[0].toUpperCase()}</div>
             <span style={{fontWeight:900,fontSize:"0.875rem",color:"rgba(255,255,255,0.6)"}}>{user}</span>
+            <button onClick={()=>setRulesOpen(true)} title="Reglas del juego"
+              style={{...S.btn,display:"flex",alignItems:"center",gap:"0.3rem",padding:"0.2rem 0.5rem",
+                background:"rgba(56,189,248,0.12)",border:`1px solid rgba(56,189,248,0.3)`,
+                color:C.sky,fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em"}}>
+              📋 Reglas
+            </button>
             {myPts&&<div style={{display:"flex",alignItems:"center",gap:"0.3rem",padding:"0.2rem 0.6rem",background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:"99px"}}><span style={{fontWeight:900,fontSize:"0.75rem",color:C.gold}}>{myPts.total} pts</span><span style={{fontSize:"0.6rem",color:C.muted}}>({myPts.partidos}+{myPts.especiales})</span></div>}
             {saveOk&&<span style={{fontSize:"0.65rem",fontWeight:700,color:C.emerald}}>✓ guardado</span>}
           </div>
@@ -1839,6 +2159,7 @@ export default function App() {
         })()}
 
         {/* -- MURO MODAL -- */}
+        {rulesOpen && <RulesModal onClose={()=>setRulesOpen(false)}/>}
         {muroOpen && <MuroModal onClose={()=>setMuroOpen(false)} muroIdx={muroIdx} setMuroIdx={setMuroIdx} currentUser={user}/>}
 
         {/* -- RANKING MODAL -- */}
@@ -1928,6 +2249,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
