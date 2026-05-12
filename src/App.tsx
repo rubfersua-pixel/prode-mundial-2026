@@ -22,7 +22,7 @@ const sbFetch = async (path, method="GET", body=null) => {
       "apikey": SB_KEY,
       "Authorization": `Bearer ${SB_KEY}`,
       "Content-Type": "application/json",
-      "Prefer": method==="POST"?"resolution=merge-duplicates,return=minimal":"return=minimal",
+      "Prefer": method==="POST"?"resolution=merge-duplicates,return=minimal":method==="PATCH"?"return=minimal":"return=minimal",
     },
     body: body ? JSON.stringify(body) : null,
   });
@@ -36,7 +36,7 @@ const sbFetch = async (path, method="GET", body=null) => {
 
 // Storage helpers - same interface as before
 const sGetUser = async (username) => {
-  const data = await sbFetch(`users?username=eq.${encodeURIComponent(username)}&select=*`);
+  const data = await sbFetch(`users?username=eq.${encodeURIComponent(username)}&select=username,password,full_name,approved`);
   return data?.[0] || null;
 };
 
@@ -49,9 +49,27 @@ const sSetUser = async (username, password, fullName="") => {
       "Content-Type": "application/json",
       "Prefer": "resolution=merge-duplicates,return=minimal",
     },
-    body: JSON.stringify({username, password, full_name: fullName}),
+    body: JSON.stringify({username, password, full_name: fullName, approved: false}),
   });
   if(!res.ok) console.error("sSetUser error:", res.status, await res.text().catch(()=>""));
+};
+
+const sApproveUser = async (username) => {
+  await sbFetch(`users?username=eq.${encodeURIComponent(username)}`, "PATCH", {approved: true});
+};
+
+const sRejectUser = async (username) => {
+  await sbFetch(`users?username=eq.${encodeURIComponent(username)}`, "DELETE");
+};
+
+const sGetPendingUsers = async () => {
+  const data = await sbFetch(`users?approved=eq.false&username=neq.admin&select=username,full_name,created_at&order=created_at`);
+  return data || [];
+};
+
+const sGetApprovedUsers = async () => {
+  const data = await sbFetch(`users?approved=eq.true&username=neq.admin&select=username,full_name&order=username`);
+  return data || [];
 };
 
 const sGetScores = async (username) => {
@@ -950,6 +968,79 @@ function SpecialPicks({sp,onChange,isOpen,onToggle}) {
         </div>
       </div>
     </Accordion>
+  );
+}
+
+// --- PENDING USERS ------------------------------------------------------------
+function PendingUsers() {
+  const [pending,setPending] = useState([]);
+  const [approved,setApproved] = useState([]);
+  const [loading,setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    const [p,a] = await Promise.all([sGetPendingUsers(), sGetApprovedUsers()]);
+    setPending(p); setApproved(a); setLoading(false);
+  };
+
+  useEffect(()=>{ load(); },[]);
+
+  const approve = async (un) => {
+    await sApproveUser(un);
+    load();
+  };
+
+  const reject = async (un) => {
+    if(!window.confirm(`¿Rechazar y eliminar a ${un}?`)) return;
+    await sRejectUser(un);
+    load();
+  };
+
+  const bo = `1px solid ${C.border}`;
+
+  return (
+    <div style={{...S.card,padding:"1rem",marginBottom:"1rem",border:`1px solid rgba(52,211,153,0.2)`,background:"rgba(52,211,153,0.03)"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"0.75rem"}}>
+        <div style={{fontSize:"0.75rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",color:C.emerald}}>
+          Usuarios {pending.length>0&&<span style={{background:"rgba(251,113,133,0.2)",color:C.rose,padding:"0.1rem 0.4rem",borderRadius:"99px",fontSize:"0.7rem"}}>{pending.length} pendiente{pending.length!==1?"s":""}</span>}
+        </div>
+        <button onClick={load} style={{...S.btn,padding:"0.25rem 0.6rem",background:"rgba(255,255,255,0.06)",border:bo,color:C.muted,fontSize:"0.65rem"}}>↻</button>
+      </div>
+
+      {loading ? <div style={{fontSize:"0.7rem",color:C.muted}}>Cargando...</div> : (<>
+
+        {/* Pending */}
+        {pending.length>0&&<>
+          <div style={{fontSize:"0.65rem",fontWeight:900,color:C.rose,textTransform:"uppercase",marginBottom:"0.4rem"}}>⏳ Pendientes de aprobación</div>
+          {pending.map(u=>(
+            <div key={u.username} style={{display:"flex",alignItems:"center",gap:"0.5rem",padding:"0.4rem 0.5rem",background:"rgba(251,113,133,0.06)",border:`1px solid rgba(251,113,133,0.15)`,borderRadius:"0.6rem",marginBottom:"0.3rem"}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:"white",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.full_name||u.username}</div>
+                <div style={{fontSize:"0.6rem",color:C.muted}}>@{u.username}</div>
+              </div>
+              <button onClick={()=>approve(u.username)} style={{...S.btn,padding:"0.3rem 0.6rem",background:"rgba(52,211,153,0.15)",border:`1px solid rgba(52,211,153,0.3)`,color:C.emerald,fontSize:"0.7rem",fontWeight:900}}>✅ Aprobar</button>
+              <button onClick={()=>reject(u.username)} style={{...S.btn,padding:"0.3rem 0.6rem",background:"rgba(239,68,68,0.1)",border:`1px solid rgba(239,68,68,0.2)`,color:"#fca5a5",fontSize:"0.7rem",fontWeight:900}}>❌</button>
+            </div>
+          ))}
+        </>}
+
+        {/* Approved */}
+        {approved.length>0&&<>
+          <div style={{fontSize:"0.65rem",fontWeight:900,color:C.emerald,textTransform:"uppercase",marginBottom:"0.4rem",marginTop:pending.length>0?"0.75rem":"0"}}>✅ Aprobados ({approved.length})</div>
+          {approved.map(u=>(
+            <div key={u.username} style={{display:"flex",alignItems:"center",gap:"0.5rem",padding:"0.35rem 0.5rem",background:"rgba(255,255,255,0.03)",border:bo,borderRadius:"0.6rem",marginBottom:"0.25rem"}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:"0.72rem",fontWeight:700,color:"rgba(255,255,255,0.8)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.full_name||u.username}</div>
+                <div style={{fontSize:"0.58rem",color:C.muted}}>@{u.username}</div>
+              </div>
+              <button onClick={()=>reject(u.username)} style={{...S.btn,padding:"0.25rem 0.5rem",background:"rgba(239,68,68,0.08)",border:`1px solid rgba(239,68,68,0.15)`,color:"#fca5a5",fontSize:"0.65rem"}}>🗑️</button>
+            </div>
+          ))}
+        </>}
+
+        {pending.length===0&&approved.length===0&&<div style={{fontSize:"0.7rem",color:C.muted,textAlign:"center",padding:"0.5rem"}}>No hay usuarios registrados</div>}
+      </>)}
+    </div>
   );
 }
 
@@ -1907,9 +1998,14 @@ function Login({onLogin}) {
       const ex = await sGetUser(un);
       if(ex){
         if(ex.password!==pw){setErr("Contraseña incorrecta.");setL(false);return;}
+        if(!ex.approved && un !== "admin"){setErr("Tu cuenta está pendiente de aprobación. El admin te habilitará pronto. ⏳");setL(false);return;}
       } else {
         if(!nombre.trim()||!apellido.trim()){setErr("Ingresá tu nombre y apellido para registrarte.");setL(false);return;}
         await sSetUser(un, pw, fn);
+        setErr(""); setL(false);
+        // Show pending message
+        setErr("✅ Cuenta creada. Esperá la aprobación del admin para ingresar. ⏳");
+        return;
       }
       const [sc,sp,jk,fsc,fjk] = await Promise.all([
         sGetScores(un), sGetSpecials(un), sGetJokers(un),
@@ -1955,7 +2051,12 @@ function Login({onLogin}) {
             <label style={S.label}>Contraseña</label>
             <input type="password" value={p} onChange={e=>{setP(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="••••••" style={S.input}/>
           </div>
-          {err&&<div style={{marginBottom:"0.875rem",padding:"0.5rem 0.75rem",background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:"0.6rem",color:"#fca5a5",fontSize:"0.7rem",fontWeight:600}}>{err}</div>}
+          {err&&<div style={{marginBottom:"0.875rem",padding:"0.5rem 0.75rem",
+            background:err.includes("✅")?"rgba(251,191,36,0.12)":"rgba(239,68,68,0.12)",
+            border:err.includes("✅")?"1px solid rgba(251,191,36,0.3)":"1px solid rgba(239,68,68,0.2)",
+            borderRadius:"0.6rem",
+            color:err.includes("✅")?C.gold:"#fca5a5",
+            fontSize:"0.7rem",fontWeight:600}}>{err}</div>}
           <button onClick={submit} disabled={loading} style={{...S.btn,width:"100%",padding:"0.875rem",background:`linear-gradient(90deg,${C.gold},${C.goldL})`,color:"#000",fontSize:"0.875rem",textTransform:"uppercase",letterSpacing:"0.1em",opacity:loading?0.6:1}}>
             {loading?"Verificando...":"Entrar al Prode →"}
           </button>
