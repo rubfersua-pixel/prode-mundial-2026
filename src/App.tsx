@@ -1589,7 +1589,7 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
               <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${r.color}40,transparent)`}}/>
               <span style={{fontSize:"0.6rem",color:C.muted}}>{r.dates}</span>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:"0.75rem"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:"0.6rem",overflowY:"auto",maxHeight:"calc(100vh - 280px)",paddingRight:"2px",paddingBottom:"0.5rem"}}>
               {r.id==="r32"
                 ? r32Teams.map(m=>(
                     <KnockoutCard key={m.id} matchId={m.id} home={m.homeId} away={m.awayId}
@@ -2319,7 +2319,7 @@ export default function App() {
         </div>
 
         {/* View tabs */}
-        <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem"}}>
+        <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem",marginTop:"0.75rem"}}>
           <button onClick={()=>{setView("grupos");setNavTab("pronosticos");}} style={{...S.btn,flex:1,padding:"0.6rem",fontSize:"0.8rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",border:"2px solid",borderColor:view==="grupos"?C.gold:"rgba(255,255,255,0.12)",color:view==="grupos"?"#000":C.muted,background:view==="grupos"?`linear-gradient(135deg,${C.gold},${C.goldL})`:"rgba(255,255,255,0.04)",transition:"all 0.2s"}}>⚽ Fase Grupos</button>
           <button onClick={()=>{setView("finales");setNavTab("pronosticos");}} style={{...S.btn,flex:1,padding:"0.6rem",fontSize:"0.8rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",border:"2px solid",borderColor:view==="finales"?C.violet:"rgba(255,255,255,0.12)",color:view==="finales"?"#000":C.muted,background:view==="finales"?`linear-gradient(135deg,${C.violet},#c4b5fd)`:"rgba(255,255,255,0.04)",transition:"all 0.2s"}}>🏆 Fases Finales</button>
         </div>
