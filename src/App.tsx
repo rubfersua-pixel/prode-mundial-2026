@@ -172,6 +172,8 @@ const sGetAllFJokers = async () => {
 };
 
 const sDeleteAll = async () => {
+  // Save admin credentials before deleting
+  const adminData = await sGetUser("admin").catch(()=>null);
   await Promise.all([
     sbFetch("scores?username=neq.impossible","DELETE"),
     sbFetch("specials?username=neq.impossible","DELETE"),
@@ -179,8 +181,10 @@ const sDeleteAll = async () => {
     sbFetch("fscores?username=neq.impossible","DELETE"),
     sbFetch("fjokers?username=neq.impossible","DELETE"),
     sbFetch("real_results?id=eq.singleton","DELETE"),
-    sbFetch("users?username=neq.admin","DELETE"),  // keep admin
+    sbFetch("users?username=neq.impossible","DELETE"),
   ]);
+  // Recreate admin user
+  if(adminData) await sSetUser("admin", adminData.password, adminData.full_name||"Admin");
 };
 
 const sDeleteGameData = async () => {
@@ -990,7 +994,8 @@ function AdminPanel({onLogout}) {
             <button onClick={async()=>{
               if(!window.confirm("¿Borrar TODO? Usuarios, pronósticos y resultados. Esta acción no se puede deshacer.")) return;
               await sDeleteAll();
-              alert("Reset total completado. Recargá la página.");
+              alert("Reset total completado. La app se va a recargar.");
+              window.location.reload();
             }} style={{...S.btn,padding:"0.5rem 0.75rem",background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.4)",color:"#fca5a5",fontSize:"0.7rem",textTransform:"uppercase"}} title="Borra absolutamente todo">
               🗑️ Reset Total
             </button>
@@ -1000,7 +1005,8 @@ function AdminPanel({onLogout}) {
               setRes(emptyScores());
               setRsp({campeon:"",subcampeon:"",goleador:"",goleadorDesignado:{name:"",goals:""},arqueroDesignado:{name:"",cleanSheets:""},clasificados:{grupos:{}}});
               setKoRes({});
-              alert("Reset completado. Pronósticos y resultados borrados. Usuarios conservados.");
+              alert("Reset completado. Pronósticos y resultados borrados. La app se va a recargar.");
+              window.location.reload();
             }} style={{...S.btn,padding:"0.5rem 0.75rem",background:"rgba(251,191,36,0.12)",border:"1px solid rgba(251,191,36,0.3)",color:C.gold,fontSize:"0.7rem",textTransform:"uppercase"}} title="Borra pronósticos y resultados, mantiene usuarios">
               🔄 Reset Pronósticos
             </button>
