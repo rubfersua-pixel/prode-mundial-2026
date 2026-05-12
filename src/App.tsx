@@ -113,10 +113,10 @@ const sSetFJokers = async (username, matchIds) => {
 };
 
 const sGetRealResults = async () => {
-  const data = await sbFetch(`real_results?id=eq.singleton&select=scores,specials,knockout_results`);
+  const data = await sbFetch(`real_results?id=eq.singleton&select=scores,specials,knockout_results,reset_at`);
   const r = data?.[0];
   if(!r) return null;
-  return {scores:r.scores||{},specials:r.specials||{},knockoutResults:r.knockout_results||{}};
+  return {scores:r.scores||{},specials:r.specials||{},knockoutResults:r.knockout_results||{},resetAt:r.reset_at||null};
 };
 
 const sSetRealResults = async (scores, specials, knockoutResults) => {
@@ -125,6 +125,14 @@ const sSetRealResults = async (scores, specials, knockoutResults) => {
     scores: scores||{},
     specials: specials||{},
     knockout_results: knockoutResults||{}
+  });
+};
+
+const sSetResetFlag = async () => {
+  await sbFetch("real_results", "POST", {
+    id:"singleton",
+    scores:{}, specials:{}, knockout_results:{},
+    reset_at: new Date().toISOString()
   });
 };
 
@@ -185,6 +193,8 @@ const sDeleteAll = async () => {
   ]);
   // Recreate admin user
   if(adminData) await sSetUser("admin", adminData.password, adminData.full_name||"Admin");
+  // Set reset flag to force all users to logout
+  await sSetResetFlag();
 };
 
 const sDeleteGameData = async () => {
@@ -194,8 +204,8 @@ const sDeleteGameData = async () => {
     sbFetch("jokers?username=neq.impossible","DELETE"),
     sbFetch("fscores?username=neq.impossible","DELETE"),
     sbFetch("fjokers?username=neq.impossible","DELETE"),
-    sbFetch("real_results?id=eq.singleton","DELETE"),
   ]);
+  await sSetResetFlag();
 };
 
 const C = {
@@ -2013,6 +2023,26 @@ export default function App() {
     const t=setTimeout(()=>{if(alive)setReady(true);},2000);
     return()=>{alive=false;clearTimeout(t);};
   },[]);
+
+  // Poll for reset flag every 15 seconds
+  useEffect(()=>{
+    if(!user||user==="admin") return;
+    const savedResetAt = localStorage.getItem("prode_reset_at");
+    const check = async () => {
+      try {
+        const rr = await sGetRealResults();
+        if(rr?.resetAt && rr.resetAt !== savedResetAt) {
+          localStorage.removeItem("prode_user");
+          localStorage.removeItem("prode_fullname");
+          localStorage.setItem("prode_reset_at", rr.resetAt);
+          window.location.reload();
+        }
+      } catch(_){}
+    };
+    check();
+    const t = setInterval(check, 15000);
+    return()=>clearInterval(t);
+  },[user]);
 
   // Auto-save scores - save individual score on change
   const handleScore=useCallback((id,side,v)=>{
