@@ -2272,6 +2272,11 @@ export default function App() {
             {myPts&&<div style={{display:"flex",alignItems:"center",gap:"0.3rem",padding:"0.2rem 0.6rem",background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:"99px"}}><span style={{fontWeight:900,fontSize:"0.75rem",color:C.gold}}>{myPts.total} pts</span><span style={{fontSize:"0.6rem",color:C.muted}}>({myPts.partidos}+{myPts.especiales})</span></div>}
             {saveOk&&<span style={{fontSize:"0.65rem",fontWeight:700,color:C.emerald}}>✓ guardado</span>}
           </div>
+          <button onClick={async()=>{
+            const ok=await registerPush();
+            if(ok) alert("✅ Notificaciones activadas. Te avisaremos antes de cada cierre.");
+            else alert("No se pudieron activar las notificaciones. Verificá los permisos del navegador.");
+          }} title="Activar notificaciones" style={{...S.btn,padding:"0.375rem 0.6rem",background:"rgba(56,189,248,0.1)",border:`1px solid rgba(56,189,248,0.2)`,color:C.sky,fontSize:"0.7rem"}}>🔔</button>
           <button onClick={handleLogout} style={{...S.btn,padding:"0.375rem 0.75rem",background:C.surface,border:`1px solid ${C.border}`,color:C.muted,fontSize:"0.7rem",textTransform:"uppercase",letterSpacing:"0.08em"}}>Salir</button>
         </div>
 
