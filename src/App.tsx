@@ -596,11 +596,7 @@ function PlayerSelect({value, onChange}) {
 // --- GRASS BACKGROUND ---------------------------------------------------------
 function GrassBg() {
   return (
-    <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none"}}>
-      <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(90deg,#1a4a1a 0px,#1a4a1a 40px,#1f5c1f 40px,#1f5c1f 80px)"}}/>
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(5,13,5,0.84) 0%,rgba(7,20,7,0.77) 50%,rgba(5,13,5,0.88) 100%)"}}/>
-      <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 50% 0%,rgba(251,191,36,0.05) 0%,transparent 60%)"}}/>
-    </div>
+    <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",background:"#0a1a0a"}}/>
   );
 }
 
@@ -1659,9 +1655,7 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser}) {
     let alive=true;
     (async()=>{
       try{
-        const [rsv,rspv]=await Promise.all([sGet("real:scores"),sGet("real:specials")]);
-        const rr=(rsv||rspv)?{scores:rsv?JSON.parse(rsv):{},specials:rspv?JSON.parse(rspv):{}}:null;
-        const [sc,jk] = await Promise.all([sGetAllScores(), sGetAllJokers()]);
+        const [rr,sc,jk] = await Promise.all([sGetRealResults(), sGetAllScores(), sGetAllJokers()]);
         if(alive)setData({sc,jk,rr});
       }catch(_){}
       if(alive)setLoading(false);
@@ -1799,8 +1793,8 @@ function RulesModal({onClose}) {
         <div style={{padding:"0.875rem 1rem",borderBottom:bo,display:"flex",alignItems:"center",gap:"0.5rem",flexShrink:0,background:"rgba(56,189,248,0.06)"}}>
           <span style={{fontSize:"1.25rem"}}>📋</span>
           <div style={{flex:1}}>
-            <div style={{fontSize:"0.95rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:C.sky}}>Reglas del Prode</div>
-            <div style={{fontSize:"0.6rem",color:C.muted}}>Mundial 2026 · USA · México · Canadá</div>
+            <div style={{fontSize:"0.95rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:C.sky}}>Reglas del Prode Elite</div>
+            <div style={{fontSize:"0.6rem",color:C.muted}}>Prode Elite · Mundial 2026 · USA · México · Canadá</div>
           </div>
           <button onClick={onClose} style={{...S.btn,width:"1.5rem",height:"1.5rem",borderRadius:"50%",background:"rgba(255,255,255,0.08)",color:C.muted,border:"none",fontSize:"0.85rem"}}>✕</button>
         </div>
@@ -1917,9 +1911,9 @@ function Login({onLogin}) {
         <div style={{textAlign:"center",marginBottom:"2rem",color:"white"}}>
           <div style={{fontSize:"2rem"}}>⚽ 🏆</div>
           <h1 style={{fontSize:"clamp(2rem,8vw,3rem)",fontWeight:900,margin:"0.5rem 0",letterSpacing:"-1px",lineHeight:1}}>
-            PRODE <span style={{background:`linear-gradient(90deg,${C.gold},${C.goldL})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>MUNDIAL</span>
+            PRODE <span style={{background:`linear-gradient(90deg,${C.gold},${C.goldL})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>ELITE</span>
           </h1>
-          <div style={{fontSize:"clamp(2.5rem,10vw,4rem)",fontWeight:900,background:`linear-gradient(90deg,${C.amber},#fff,${C.amber})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1}}>2026</div>
+          <div style={{fontSize:"clamp(2.5rem,10vw,4rem)",fontWeight:900,background:`linear-gradient(90deg,${C.amber},#fff,${C.amber})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1}}>MUNDIAL 2026</div>
           <p style={{color:C.muted,fontSize:"0.75rem",letterSpacing:"0.2em",marginTop:"0.5rem"}}>USA · MÉXICO · CANADÁ</p>
         </div>
         <div style={{...S.card,padding:"1.5rem",backdropFilter:"blur(10px)"}}>
@@ -2146,7 +2140,7 @@ export default function App() {
           <div style={{display:"inline-flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.25rem"}}>
             <span style={{fontSize:"1.5rem"}}>⚽</span>
             <h1 style={{fontSize:"clamp(2rem,8vw,3.5rem)",fontWeight:900,letterSpacing:"-1px",margin:0,lineHeight:1}}>
-              PRODE <span style={{background:`linear-gradient(90deg,${C.gold},${C.goldL})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>MUNDIAL</span>
+              PRODE <span style={{background:`linear-gradient(90deg,${C.gold},${C.goldL})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>ELITE</span>
             </h1>
             <span style={{fontSize:"1.5rem"}}>🏆</span>
           </div>
@@ -2284,7 +2278,7 @@ export default function App() {
         )}
 
         <div style={{textAlign:"center",paddingBottom:"2rem",fontSize:"0.6rem",color:"rgba(255,255,255,0.2)",letterSpacing:"0.15em",textTransform:"uppercase"}}>
-          Prode Mundial 2026 · Horarios en hora boliviana (BOT, UTC-4)
+          Prode Elite · Mundial 2026 · Horarios en hora boliviana (BOT, UTC-4)
         </div>
       </div>
     </div>
