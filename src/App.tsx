@@ -1360,6 +1360,31 @@ const BRACKET = {
   final:[{id:"final_1",home:"sf_1",away:"sf_2"}],
 };
 
+// Group knockout matches by date for accordion display
+const KO_DATES = (() => {
+  const groups = {};
+  const allMatches = [
+    ...R32_MATCHES.map(m=>({...m,round:"r32",roundLabel:"16avos",icon:"⚔️",color:"#a78bfa"})),
+    ...BRACKET.r16.map((m,i)=>({id:m.id,home:m.home,away:m.away,label:`Partido ${i+1}`,round:"r16",roundLabel:"8avos",icon:"🥊",color:"#38bdf8"})),
+    ...BRACKET.qf.map((m,i)=>({id:m.id,home:m.home,away:m.away,label:`Partido ${i+1}`,round:"qf",roundLabel:"Cuartos",icon:"🔥",color:"#f59e0b"})),
+    ...BRACKET.sf.map((m,i)=>({id:m.id,home:m.home,away:m.away,label:`Partido ${i+1}`,round:"sf",roundLabel:"Semis",icon:"💥",color:"#fb7185"})),
+    ...BRACKET.final.map((m,i)=>({id:m.id,home:m.home,away:m.away,label:"Final",round:"final",roundLabel:"Final",icon:"👑",color:"#fbbf24"})),
+  ];
+  allMatches.forEach(m=>{
+    const ts = KO_KICKOFF[m.id];
+    if(!ts) return;
+    const d = new Date(ts-4*3600*1000); // BOT = UTC-4
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
+    const dias = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+    const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+    const label = `${dias[d.getUTCDay()]} ${d.getUTCDate()} de ${meses[d.getUTCMonth()]}`;
+    if(!groups[key]) groups[key] = {label, matches:[]};
+    const h=d.getUTCHours(),mi=d.getUTCMinutes();
+    groups[key].matches.push({...m, time:`${String(h).padStart(2,"0")}:${String(mi).padStart(2,"0")}`});
+  });
+  return Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,g])=>({date,label:g.label,matches:g.matches}));
+})();
+
 function resolveKOTeam(matchId, adminResults, r32Teams) {
   const r32=r32Teams.find(m=>m.id===matchId);
   if(r32){
@@ -1378,21 +1403,31 @@ function resolveKOTeam(matchId, adminResults, r32Teams) {
   return null;
 }
 
+function slotLabel(slot) {
+  if(!slot) return "TBD";
+  if(slot.type==="W") return `1° Grupo ${slot.group}`;
+  if(slot.type==="R") return `2° Grupo ${slot.group}`;
+  if(slot.type==="T") return "Mejor 3°";
+  return "TBD";
+}
+
 function resolveSlot(slot, realRes, groupScores) {
-  if(!realRes||!groupScores) return null;
+  if(!slot) return null;
+  // Only resolve from REAL results (admin loaded), never from user predictions
+  if(!realRes?.scores || !Object.keys(realRes.scores).length) return null;
   if(slot.type==="W"||slot.type==="R") {
     const pos = slot.type==="W" ? 0 : 1;
     try {
-      const table = computeTable(slot.group, groupScores);
+      const table = computeTable(slot.group, realRes.scores);
       return table[pos]?.id || null;
     } catch(_){ return null; }
   }
-  // Third — resolved by admin from real:knockout
-  return realRes?.specials?.thirds?.[slot.groups?.join(",")]||null;
+  if(slot.type==="T") return realRes?.specials?.thirds?.[slot.groups?.join(",")]||null;
+  return null;
 }
 
 // Knockout score input card
-function KnockoutCard({matchId, home, away, fScores, onScore, isJoker, onJoker, jokersLeft, round}) {
+function KnockoutCard({matchId, home, away, homeLabel, awayLabel, fScores, onScore, isJoker, onJoker, jokersLeft, round}) {
   const s = fScores[matchId]||{home:"",away:""};
   const h = parseInt(s.home), a = parseInt(s.away);
   const has = !isNaN(h)&&!isNaN(a);
@@ -1463,7 +1498,7 @@ function KnockoutCard({matchId, home, away, fScores, onScore, isJoker, onJoker, 
 
 // Helper: resolve a slot to a team id given real group results
 
-function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subRound,setSubRound}) {
+function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subRound,setSubRound,openF,setOpenF}) {
   // HOOKS FIRST - Rules of Hooks
   const [krRanking,setKrRanking] = useState([]);
   const [krLoaded,setKrLoaded]   = useState(false);
@@ -1559,61 +1594,65 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
         </div>{/* end inner card */}
       </div>{/* end centered wrapper */}
 
-      {/* -- ROUND BUTTONS: horizontal centered -- */}
-      <div style={{display:"flex",gap:"0.4rem",marginBottom:"0.75rem",overflowX:"auto",paddingBottom:"4px",justifyContent:"center"}}>
-        {ROUNDS.map(r=>{
-          const active = subRound===r.id;
-          return (
-            <button key={r.id} onClick={()=>toggleRound(r.id)}
-              style={{...S.btn,flexShrink:0,padding:"0.5rem 1rem",fontSize:"0.75rem",fontWeight:900,
-                textTransform:"uppercase",letterSpacing:"0.08em",
-                background:active?`rgba(${r.id==="r32"?"167,139,250":r.id==="r16"?"56,189,248":r.id==="qf"?"251,191,36":r.id==="sf"?"251,113,133":"251,191,36"},0.15)`:"rgba(255,255,255,0.04)",
-                color:active?r.color:C.muted,
-                border:`2px solid ${active?r.color:"rgba(255,255,255,0.1)"}`,
-                boxShadow:active?`0 0 14px ${r.color}40`:"none",
-                transition:"all 0.2s"}}>
-              {r.icon} {r.label}
-              <span style={{marginLeft:"0.3rem",fontSize:"0.55rem",opacity:0.7}}>({r.count})</span>
-            </button>
+      {/* Comodines finales */}
+      <div style={{display:"inline-flex",alignItems:"center",gap:"0.35rem",padding:"0.2rem 0.55rem",background:jLeft>0?"rgba(167,139,250,0.08)":"rgba(255,255,255,0.04)",border:`1px solid ${jLeft>0?"rgba(167,139,250,0.25)":C.border}`,borderRadius:"99px",marginBottom:"0.75rem"}}>
+        <span style={{fontSize:"0.8rem"}}>🃏</span>
+        <span style={{fontWeight:900,fontSize:"0.68rem",color:jLeft>0?C.violet:C.muted}}>{jLeft} comodín{jLeft!==1?"es":""} · fase final</span>
+      </div>
+
+      {/* Dates accordion - same format as fase grupos */}
+      <div style={{overflowY:"auto",maxHeight:"calc(100vh - 200px)",paddingRight:"2px",paddingBottom:"1rem"}}>
+        {KO_DATES.map((fecha,fi)=>{
+          const isOpen = openF===fecha.date;
+          const adminResults = realRes?.knockoutResults||{};
+          const r32t = R32_MATCHES.map(x=>({...x,homeId:resolveSlot(x.home,realRes,scores),awayId:resolveSlot(x.away,realRes,scores)}));
+          const done = fecha.matches.filter(m=>{const s=fScores[m.id];return s&&!isNaN(parseInt(s.home))&&!isNaN(parseInt(s.away));}).length;
+          const roundColors = {"r32":"#a78bfa","r16":"#38bdf8","qf":"#f59e0b","sf":"#fb7185","final":"#fbbf24"};
+          return(
+            <div key={fecha.date} style={{marginBottom:"0.4rem"}}>
+              <button onClick={()=>setOpenF(p=>p===fecha.date?null:fecha.date)}
+                style={{...S.btn,width:"100%",padding:"0.7rem 0.875rem",background:isOpen?"rgba(255,255,255,0.07)":"rgba(255,255,255,0.04)",border:`1px solid ${isOpen?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.08)"}`,color:"white",display:"flex",alignItems:"center",gap:"0.5rem",borderRadius:"0.875rem",transition:"all 0.2s",textAlign:"left"}}>
+                <div style={{width:"1.75rem",height:"1.75rem",borderRadius:"0.5rem",background:`rgba(${fecha.matches[0]?.round==="r32"?"167,139,250":fecha.matches[0]?.round==="r16"?"56,189,248":fecha.matches[0]?.round==="qf"?"251,191,36":fecha.matches[0]?.round==="sf"?"251,113,133":"251,191,36"},0.2)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.85rem",flexShrink:0}}>{fecha.matches[0]?.icon||"⚽"}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:900,fontSize:"0.85rem",lineHeight:1.2}}>{fecha.matches[0]?.roundLabel} — {fecha.label}</div>
+                  <div style={{fontSize:"0.6rem",color:C.muted,marginTop:"0.1rem"}}>{fecha.matches.map(m=>m.time).join(" · ")} BOT</div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:"0.4rem",flexShrink:0}}>
+                  <span style={{fontSize:"0.65rem",color:done>0?C.gold:C.muted,fontWeight:done>0?700:400}}>{done}/{fecha.matches.length}</span>
+                  <span style={{fontSize:"0.7rem",color:C.muted}}>{isOpen?"▲":"▼"}</span>
+                </div>
+              </button>
+              {isOpen&&(
+                <div style={{marginTop:"0.35rem",display:"flex",flexDirection:"column",gap:"0.35rem",paddingLeft:"0.25rem"}}>
+                  {fecha.matches.map((m,mi)=>{
+                    const homeId = m.round==="r32"?(r32t.find(x=>x.id===m.id)?.homeId||null):resolveKOTeam(m.home,adminResults,r32t);
+                    const awayId = m.round==="r32"?(r32t.find(x=>x.id===m.id)?.awayId||null):resolveKOTeam(m.away,adminResults,r32t);
+                    const homeLabel = m.round==="r32"?slotLabel(m.home):`G. P${mi+1}`;
+                    const awayLabel = m.round==="r32"?slotLabel(m.away):`G. P${mi+2}`;
+                    const hT=homeId?T[homeId]:null, aT=awayId?T[awayId]:null;
+                    const s=fScores[m.id]||{};
+                    const locked=isLocked(m.id);
+                    return(
+                      <div key={m.id} style={{background:"rgba(255,255,255,0.04)",border:`1px solid rgba(255,255,255,0.07)`,borderRadius:"0.75rem",padding:"0.5rem 0.75rem"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:"0.25rem",marginBottom:"0.4rem"}}>
+                          <span style={{fontSize:"0.55rem",fontWeight:900,background:`rgba(${roundColors[m.round]==="r32"?"167,139,250":""},0.15)`,color:roundColors[m.round]||C.violet,padding:"0.1rem 0.35rem",borderRadius:"0.3rem"}}>{m.roundLabel}</span>
+                          <span style={{fontSize:"0.55rem",color:C.muted}}>P{mi+1} · {m.time} BOT</span>
+                          {locked&&<span style={{fontSize:"0.55rem",color:C.rose,marginLeft:"auto"}}>🔒 Cerrado</span>}
+                        </div>
+                        <KnockoutCard matchId={m.id} home={homeId} away={awayId}
+                          homeLabel={homeLabel} awayLabel={awayLabel}
+                          fScores={fScores} onScore={handleScore}
+                          isJoker={fJokers.includes(m.id)} onJoker={handleJoker} jokersLeft={jLeft}
+                          round={m.roundLabel}/>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
-
-      {/* Content below tabs — collapses when same button pressed */}
-      {subRound && (()=>{
-        const r = ROUNDS.find(x=>x.id===subRound);
-        return (
-          <div>
-            <div style={{...S.hdr,marginBottom:"0.75rem"}}>
-              <h3 style={{margin:0,fontSize:"1rem",fontWeight:900,textTransform:"uppercase",color:"white"}}>{r.icon} {r.label}</h3>
-              <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${r.color}40,transparent)`}}/>
-              <span style={{fontSize:"0.6rem",color:C.muted}}>{r.dates}</span>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:"0.6rem",overflowY:"auto",maxHeight:"calc(100vh - 280px)",paddingRight:"2px",paddingBottom:"0.5rem"}}>
-              {r.id==="r32"
-                ? r32Teams.map(m=>(
-                    <KnockoutCard key={m.id} matchId={m.id} home={m.homeId} away={m.awayId}
-                      fScores={fScores} onScore={handleScore}
-                      isJoker={fJokers.includes(m.id)} onJoker={handleJoker} jokersLeft={jLeft}
-                      round="16avos"/>
-                  ))
-                : BRACKET[r.id].map(m=>{
-                    const adminResults=realRes?.knockoutResults||{};
-                    const r32t=R32_MATCHES.map(x=>({...x,homeId:resolveSlot(x.home,realRes,scores),awayId:resolveSlot(x.away,realRes,scores)}));
-                    return(
-                      <KnockoutCard key={m.id} matchId={m.id}
-                        home={resolveKOTeam(m.home,adminResults,r32t)}
-                        away={resolveKOTeam(m.away,adminResults,r32t)}
-                        fScores={fScores} onScore={handleScore}
-                        isJoker={fJokers.includes(m.id)} onJoker={handleJoker} jokersLeft={jLeft}
-                        round={r.label}/>
-                    );
-                  })
-              }
-            </div>
-          </div>
-        );
-      })()}
 
     </div>
   );
@@ -2396,7 +2435,7 @@ export default function App() {
 
         {/* FASES FINALES */}
         {view==="finales" && showPronosticos && (
-          <FasesFinales fScores={fScores} setFScores={setFScores} fJokers={fJokers} setFJokers={setFJokers} scores={scores} realRes={realRes} subRound={subRound} setSubRound={setSubRound}/>
+          <FasesFinales fScores={fScores} setFScores={setFScores} fJokers={fJokers} setFJokers={setFJokers} scores={scores} realRes={realRes} subRound={subRound} setSubRound={setSubRound} openF={openF} setOpenF={setOpenF}/>
         )}
 
       </div>
