@@ -40,8 +40,18 @@ const sGetUser = async (username) => {
   return data?.[0] || null;
 };
 
-const sSetUser = async (username, password) => {
-  await sbFetch("users", "POST", {username, password});
+const sSetUser = async (username, password, fullName="") => {
+  const res = await fetch(`${SB_URL}/rest/v1/users`, {
+    method: "POST",
+    headers: {
+      "apikey": SB_KEY,
+      "Authorization": `Bearer ${SB_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify({username, password, full_name: fullName}),
+  });
+  if(!res.ok) console.error("sSetUser error:", res.status, await res.text().catch(()=>""));
 };
 
 const sGetScores = async (username) => {
@@ -1870,9 +1880,16 @@ function RulesModal({onClose}) {
 
 // --- LOGIN --------------------------------------------------------------------
 function Login({onLogin}) {
-  const [u,setU]=useState(""),[p,setP]=useState(""),[err,setErr]=useState(""),[loading,setL]=useState(false);
+  const [nombre,setNombre]     = useState("");
+  const [apellido,setApellido] = useState("");
+  const [u,setU]               = useState("");
+  const [p,setP]               = useState("");
+  const [err,setErr]           = useState("");
+  const [loading,setL]         = useState(false);
+
   const submit=async()=>{
-    const un=u.trim().toLowerCase(),pw=p.trim();
+    const un=u.trim().toLowerCase(), pw=p.trim();
+    const fn=(nombre.trim()+" "+apellido.trim()).trim();
     if(!un||!pw){setErr("Completá usuario y contraseña.");return;}
     if(pw.length<3){setErr("Contraseña mínimo 3 caracteres.");return;}
     setL(true);setErr("");
@@ -1881,16 +1898,18 @@ function Login({onLogin}) {
       if(ex){
         if(ex.password!==pw){setErr("Contraseña incorrecta.");setL(false);return;}
       } else {
-        await sSetUser(un, pw);
+        if(!nombre.trim()||!apellido.trim()){setErr("Ingresá tu nombre y apellido para registrarte.");setL(false);return;}
+        await sSetUser(un, pw, fn);
       }
       const [sc,sp,jk,fsc,fjk] = await Promise.all([
         sGetScores(un), sGetSpecials(un), sGetJokers(un),
         sGetFScores(un), sGetFJokers(un)
       ]);
-      onLogin(un, sc, sp, jk, fsc, fjk);
-    } catch(_){onLogin(u.trim().toLowerCase(),null);}
+      onLogin(un, ex?.full_name||fn, sc, sp, jk, fsc, fjk);
+    } catch(e){console.error(e);setErr("Error de conexión. Intentá de nuevo.");}
     setL(false);
   };
+
   return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"1rem",fontFamily:FONT,position:"relative",WebkitFontSmoothing:"antialiased"}}>
       <GrassBg/>
@@ -1905,8 +1924,20 @@ function Login({onLogin}) {
         </div>
         <div style={{...S.card,padding:"1.5rem",backdropFilter:"blur(10px)"}}>
           <h2 style={{color:"rgba(255,255,255,0.8)",fontSize:"1.25rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:"0.25rem"}}>Ingresar</h2>
-          <p style={{color:C.muted,fontSize:"0.7rem",marginBottom:"1.25rem"}}>Si no tenés cuenta, se crea automáticamente.</p>
-          <div style={{marginBottom:"0.875rem"}}>
+          <p style={{color:C.muted,fontSize:"0.7rem",marginBottom:"1.25rem"}}>Completá todos los campos. Si ya tenés cuenta, nombre y apellido se ignoran.</p>
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem",marginBottom:"0.75rem"}}>
+            <div>
+              <label style={S.label}>Nombre</label>
+              <input type="text" value={nombre} onChange={e=>{setNombre(e.target.value);setErr("");}} placeholder="Nombre" style={S.input}/>
+            </div>
+            <div>
+              <label style={S.label}>Apellido</label>
+              <input type="text" value={apellido} onChange={e=>{setApellido(e.target.value);setErr("");}} placeholder="Apellido" style={S.input}/>
+            </div>
+          </div>
+
+          <div style={{marginBottom:"0.75rem"}}>
             <label style={S.label}>Usuario</label>
             <input type="text" value={u} onChange={e=>{setU(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="Tu nombre de usuario" style={S.input}/>
           </div>
@@ -1927,7 +1958,8 @@ function Login({onLogin}) {
 // --- APP ----------------------------------------------------------------------
 export default function App() {
   const [ready,setReady]   = useState(false);
-  const [user,setUser]     = useState(null);
+  const [user,setUser]       = useState(null);
+  const [fullName,setFullName] = useState("");
   const [view,setView]     = useState("grupos"); // "grupos" | "finales"
   const [rulesOpen,setRulesOpen]   = useState(false);
   const [muroOpen,setMuroOpen]     = useState(false);
@@ -1955,6 +1987,8 @@ export default function App() {
       try {
         // Load session from localStorage
         const savedUser = localStorage.getItem("prode_user");
+        const savedFullName = localStorage.getItem("prode_fullname");
+        if(savedFullName) setFullName(savedFullName);
         const rr = await sGetRealResults().catch(()=>null);
         if(!alive) return;
         if(rr) setReal(rr);
@@ -2019,19 +2053,23 @@ export default function App() {
     });
   },[user]);
 
-  const handleLogin=useCallback(async(un,sc,sp,jk,fsc,fjk)=>{
+  const handleLogin=useCallback(async(un,fn,sc,sp,jk,fsc,fjk)=>{
     setUser(un);
+    setFullName(fn||un);
     if(sc) setScores(sc);
     if(sp) setSp(p=>({...p,...sp}));
     if(jk) setJokers(jk);
     if(fsc) setFScores(fsc);
     if(fjk) setFJokers(fjk.map?fjk.map(String):fjk);
     localStorage.setItem("prode_user", un);
+    localStorage.setItem("prode_fullname", fn||un);
   },[]);
 
   const handleLogout=useCallback(()=>{
     localStorage.removeItem("prode_user");
+    localStorage.removeItem("prode_fullname");
     setUser(null);
+    setFullName("");
     setScores(emptyScores());
     setSp({campeon:"",subcampeon:"",goleador:"",goleadorDesignado:"",arqueroDesignado:"",clasificados:{grupos:{}}});
     setJokers([]);setFScores({});setFJokers([]);
@@ -2087,7 +2125,10 @@ export default function App() {
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.25rem",flexWrap:"wrap",gap:"0.5rem"}}>
           <div style={{display:"flex",alignItems:"center",gap:"0.5rem",flexWrap:"wrap"}}>
             <div style={{width:"1.75rem",height:"1.75rem",borderRadius:"0.5rem",background:"rgba(251,191,36,0.2)",border:"1px solid rgba(251,191,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.75rem"}}>{user[0].toUpperCase()}</div>
-            <span style={{fontWeight:900,fontSize:"0.875rem",color:"rgba(255,255,255,0.6)"}}>{user}</span>
+            <div style={{display:"flex",flexDirection:"column",lineHeight:1.2}}>
+              <span style={{fontWeight:900,fontSize:"0.875rem",color:"rgba(255,255,255,0.85)"}}>{fullName||user}</span>
+              <span style={{fontSize:"0.6rem",color:C.muted}}>@{user}</span>
+            </div>
             <button onClick={()=>setRulesOpen(true)} title="Reglas del juego"
               style={{...S.btn,display:"flex",alignItems:"center",gap:"0.3rem",padding:"0.2rem 0.5rem",
                 background:"rgba(56,189,248,0.12)",border:`1px solid rgba(56,189,248,0.3)`,
