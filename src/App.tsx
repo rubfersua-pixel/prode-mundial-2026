@@ -1621,7 +1621,7 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
 
 
 // --- RANKING MODAL ------------------------------------------------------------
-function RankingModal({onClose, currentUser, realRes}) {
+function RankingModal({onClose, currentUser, realRes, inline=false}) {
   const [rows,setRows]=useState([]);
   const [loading,setLoading]=useState(true);
 
@@ -1785,7 +1785,7 @@ function RankingModal({onClose, currentUser, realRes}) {
 }
 
 // --- MURO DE PRONÓSTICOS ------------------------------------------------------
-function MuroModal({onClose,muroIdx,setMuroIdx,currentUser}) {
+function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
   const [data,setData]=useState(null);
   const [loading,setLoading]=useState(true);
 
@@ -1912,7 +1912,7 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser}) {
 }
 
 // --- RULES MODAL --------------------------------------------------------------
-function RulesModal({onClose}) {
+function RulesModal({onClose,inline=false}) {
   const bo = `1px solid ${C.border}`;
   const Section = ({icon,title,children}) => (
     <div style={{marginBottom:"1.25rem"}}>
@@ -1930,9 +1930,9 @@ function RulesModal({onClose}) {
     </div>
   );
   return (
-    <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"1rem",paddingTop:"3rem"}}>
-      <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(4px)"}}/>
-      <div style={{position:"relative",width:"100%",maxWidth:"540px",maxHeight:"86vh",display:"flex",flexDirection:"column",background:"#0a1a0a",border:`1px solid ${C.sky}40`,borderRadius:"1.25rem",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.6)"}}>
+    <div style={inline?{}:{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"1rem",paddingTop:"3rem"}}>
+      {!inline&&<div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(4px)"}}/>}
+      <div style={{position:"relative",width:"100%",maxWidth:inline?"100%":"540px",maxHeight:inline?"calc(100vh - 180px)":"86vh",display:"flex",flexDirection:"column",background:"#0a1a0a",border:`1px solid ${C.sky}40`,borderRadius:inline?"1rem":"1.25rem",overflow:"hidden"}}>
 
         {/* Header */}
         <div style={{padding:"0.875rem 1rem",borderBottom:bo,display:"flex",alignItems:"center",gap:"0.5rem",flexShrink:0,background:"rgba(56,189,248,0.06)"}}>
@@ -2287,13 +2287,21 @@ export default function App() {
   if(!user) return <Login onLogin={handleLogin}/>;
   if(user==="admin") return <AdminPanel onLogout={handleLogout}/>;
 
+  // Active nav tab drives which "page" shows
+  const showMuro = navTab==="muro";
+  const showRanking = navTab==="ranking";
+  const showInfo = navTab==="info";
+  const showEspeciales = navTab==="especiales";
+  const showPosiciones = navTab==="posiciones";
+  const showPronosticos = navTab==="pronosticos";
+
   return (
     <div style={{minHeight:"100vh",fontFamily:FONT,position:"relative",color:"white",WebkitFontSmoothing:"antialiased",MozOsxFontSmoothing:"grayscale",paddingBottom:"72px"}}>
       <GrassBg/>
       <div style={{position:"relative",zIndex:1,maxWidth:"672px",margin:"0 auto",padding:"0.75rem 1rem 0"}}>
 
         {/* User bar */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem",gap:"0.5rem"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.25rem",gap:"0.5rem"}}>
           <div style={{display:"flex",alignItems:"center",gap:"0.5rem"}}>
             <div style={{width:"2rem",height:"2rem",borderRadius:"0.5rem",background:"rgba(251,191,36,0.2)",border:"1px solid rgba(251,191,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.85rem",flexShrink:0}}>{(fullName||user)[0].toUpperCase()}</div>
             <div style={{lineHeight:1.2}}>
@@ -2311,65 +2319,83 @@ export default function App() {
         </div>
 
         {/* View tabs */}
-        <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>
-          <button onClick={()=>setView("grupos")} style={{...S.btn,flex:1,padding:"0.6rem",fontSize:"0.8rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",border:"2px solid",borderColor:view==="grupos"?C.gold:"rgba(255,255,255,0.12)",color:view==="grupos"?"#000":C.muted,background:view==="grupos"?`linear-gradient(135deg,${C.gold},${C.goldL})`:"rgba(255,255,255,0.04)",transition:"all 0.2s"}}>⚽ Fase Grupos</button>
-          <button onClick={()=>setView("finales")} style={{...S.btn,flex:1,padding:"0.6rem",fontSize:"0.8rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",border:"2px solid",borderColor:view==="finales"?C.violet:"rgba(255,255,255,0.12)",color:view==="finales"?"#000":C.muted,background:view==="finales"?`linear-gradient(135deg,${C.violet},#c4b5fd)`:"rgba(255,255,255,0.04)",transition:"all 0.2s"}}>🏆 Fases Finales</button>
+        <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem"}}>
+          <button onClick={()=>{setView("grupos");setNavTab("pronosticos");}} style={{...S.btn,flex:1,padding:"0.6rem",fontSize:"0.8rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",border:"2px solid",borderColor:view==="grupos"?C.gold:"rgba(255,255,255,0.12)",color:view==="grupos"?"#000":C.muted,background:view==="grupos"?`linear-gradient(135deg,${C.gold},${C.goldL})`:"rgba(255,255,255,0.04)",transition:"all 0.2s"}}>⚽ Fase Grupos</button>
+          <button onClick={()=>{setView("finales");setNavTab("pronosticos");}} style={{...S.btn,flex:1,padding:"0.6rem",fontSize:"0.8rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",border:"2px solid",borderColor:view==="finales"?C.violet:"rgba(255,255,255,0.12)",color:view==="finales"?"#000":C.muted,background:view==="finales"?`linear-gradient(135deg,${C.violet},#c4b5fd)`:"rgba(255,255,255,0.04)",transition:"all 0.2s"}}>🏆 Fases Finales</button>
         </div>
 
         {/* Modals */}
         {rulesOpen && <RulesModal onClose={()=>setRulesOpen(false)}/>}
-        {muroOpen && <MuroModal onClose={()=>setMuroOpen(false)} muroIdx={muroIdx} setMuroIdx={setMuroIdx} currentUser={user}/>}
-        {rankModalOpen && <RankingModal onClose={()=>setRankModal(false)} currentUser={user} realRes={realRes}/>}
-        {spOpen && (
-          <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"1rem",paddingTop:"3rem"}}>
-            <div onClick={()=>setSpOpen(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.8)"}}/>
-            <div style={{position:"relative",width:"100%",maxWidth:"540px",maxHeight:"86vh",overflowY:"auto",background:"#0a1a0a",border:`1px solid ${C.border}`,borderRadius:"1.25rem",padding:"1.25rem"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem"}}>
-                <span style={{fontWeight:900,fontSize:"0.9rem",textTransform:"uppercase",color:C.gold}}>Pronósticos Especiales</span>
-                <button onClick={()=>setSpOpen(false)} style={{...S.btn,width:"1.5rem",height:"1.5rem",borderRadius:"50%",background:"rgba(255,255,255,0.08)",color:C.muted,border:"none",fontSize:"0.85rem"}}>✕</button>
-              </div>
-              <SpecialPicks sp={sp} onChange={(k,v)=>setSp(p=>({...p,[k]:v}))} isOpen={true} onToggle={()=>{}}/>
-            </div>
-          </div>
-        )}
-        {navTab==="posiciones" && (
-          <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"1rem",paddingTop:"3rem"}}>
-            <div onClick={()=>setNavTab("pronosticos")} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.8)"}}/>
-            <div style={{position:"relative",width:"100%",maxWidth:"540px",maxHeight:"86vh",display:"flex",flexDirection:"column",background:"#0a1a0a",border:`1px solid ${C.border}`,borderRadius:"1.25rem",overflow:"hidden"}}>
-              <div style={{padding:"0.75rem 1rem",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-                <span style={{fontWeight:900,fontSize:"0.9rem",textTransform:"uppercase",color:C.emerald}}>Tabla de Posiciones</span>
-                <button onClick={()=>setNavTab("pronosticos")} style={{...S.btn,width:"1.5rem",height:"1.5rem",borderRadius:"50%",background:"rgba(255,255,255,0.08)",color:C.muted,border:"none",fontSize:"0.85rem"}}>✕</button>
-              </div>
-              <div style={{overflowY:"auto",flex:1,padding:"0.75rem"}}>
-                {Object.keys(GROUPS).map((gid,i)=>(
-                  <GroupTable key={gid} gid={gid} gi={i} scores={scores} isOpen={openG===gid} onToggle={()=>setOpenG(p=>p===gid?null:gid)}/>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {muroOpen && <MuroModal onClose={()=>{setMuroOpen(false);setNavTab("pronosticos");}} muroIdx={muroIdx} setMuroIdx={setMuroIdx} currentUser={user}/>}
+        {rankModalOpen && <RankingModal onClose={()=>{setRankModal(false);setNavTab("pronosticos");}} currentUser={user} realRes={realRes}/>}
 
-        {/* FASE GRUPOS */}
-        {view==="grupos" && (<>
-          <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.75rem"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"0.35rem",padding:"0.2rem 0.55rem",background:jLeft>0?"rgba(251,191,36,0.08)":"rgba(255,255,255,0.04)",border:`1px solid ${jLeft>0?"rgba(251,191,36,0.25)":C.border}`,borderRadius:"99px"}}>
+        {/* FASE GRUPOS - Pronósticos */}
+        {view==="grupos" && showPronosticos && (<>
+          <div style={{marginBottom:"0.75rem"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"0.5rem"}}>
+              <h2 style={{margin:0,fontSize:"1rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(255,255,255,0.8)"}}>Pronósticos</h2>
+              <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,rgba(251,191,36,0.3),transparent)`}}/>
+              <span style={{fontSize:"0.6rem",color:C.muted}}>FASE DE GRUPOS</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.5rem"}}>
+              <div style={{flex:1,height:"4px",background:"rgba(255,255,255,0.08)",borderRadius:"99px",overflow:"hidden"}}>
+                <div style={{height:"100%",background:`linear-gradient(90deg,${C.gold},${C.goldL})`,width:`${ALL_MATCHES.length?(totalPlayed/ALL_MATCHES.length)*100:0}%`,transition:"width 0.5s"}}/>
+              </div>
+              <span style={{fontSize:"0.6rem",color:C.muted,flexShrink:0}}>{totalPlayed}/{ALL_MATCHES.length}</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:"0.35rem",padding:"0.25rem 0.6rem",background:jLeft>0?"rgba(251,191,36,0.08)":"rgba(255,255,255,0.04)",border:`1px solid ${jLeft>0?"rgba(251,191,36,0.25)":C.border}`,borderRadius:"99px",display:"inline-flex"}}>
               <span style={{fontSize:"0.8rem"}}>🃏</span>
-              <span style={{fontWeight:900,fontSize:"0.68rem",color:jLeft>0?C.gold:C.muted}}>{jLeft} comodín{jLeft!==1?"es":""}</span>
+              <span style={{fontWeight:900,fontSize:"0.68rem",color:jLeft>0?C.gold:C.muted}}>{jLeft} comodín{jLeft!==1?"es":""} restante{jLeft!==1?"s":""}</span>
+              <span style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.2)"}}>· x2 pts</span>
             </div>
-            <div style={{flex:1,height:"3px",background:"rgba(255,255,255,0.06)",borderRadius:"99px",overflow:"hidden"}}>
-              <div style={{height:"100%",background:`linear-gradient(90deg,${C.gold},${C.goldL})`,width:`${ALL_MATCHES.length?(totalPlayed/ALL_MATCHES.length)*100:0}%`,transition:"width 0.5s"}}/>
-            </div>
-            <span style={{fontSize:"0.6rem",color:C.muted}}>{totalPlayed}/{ALL_MATCHES.length}</span>
           </div>
-          <div style={{overflowY:"auto",maxHeight:"calc(100vh - 200px)",paddingRight:"2px"}}>
+          <div style={{overflowY:"auto",maxHeight:"calc(100vh - 240px)",paddingRight:"2px",paddingBottom:"0.5rem"}}>
             {FECHAS.map((f,i)=>(
               <FechaSection key={f.id} fecha={f} index={i} isOpen={openF===f.id} onToggle={()=>setOpenF(p=>p===f.id?null:f.id)} scores={scores} onScore={handleScore} jokers={jokers} onJoker={handleJoker} jLeft={jLeft}/>
             ))}
           </div>
         </>)}
 
+        {/* FASE GRUPOS - Especiales */}
+        {view==="grupos" && showEspeciales && (
+          <div style={{overflowY:"auto",maxHeight:"calc(100vh - 180px)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"1rem"}}>
+              <h2 style={{margin:0,fontSize:"1rem",fontWeight:900,textTransform:"uppercase",color:C.gold}}>Pronósticos Especiales</h2>
+            </div>
+            <SpecialPicks sp={sp} onChange={(k,v)=>setSp(p=>({...p,[k]:v}))} isOpen={true} onToggle={()=>{}}/>
+          </div>
+        )}
+
+        {/* Posiciones */}
+        {showPosiciones && (
+          <div style={{overflowY:"auto",maxHeight:"calc(100vh - 180px)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"1rem"}}>
+              <h2 style={{margin:0,fontSize:"1rem",fontWeight:900,textTransform:"uppercase",color:C.emerald}}>Tabla de Posiciones</h2>
+              <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(52,211,153,0.3),transparent)"}}/>
+            </div>
+            {Object.keys(GROUPS).map((gid,i)=>(
+              <GroupTable key={gid} gid={gid} gi={i} scores={scores} isOpen={openG===gid} onToggle={()=>setOpenG(p=>p===gid?null:gid)}/>
+            ))}
+          </div>
+        )}
+
+        {/* Muro */}
+        {showMuro && (
+          <MuroModal onClose={()=>setNavTab("pronosticos")} muroIdx={muroIdx} setMuroIdx={setMuroIdx} currentUser={user} inline={true}/>
+        )}
+
+        {/* Ranking */}
+        {showRanking && (
+          <RankingModal onClose={()=>setNavTab("pronosticos")} currentUser={user} realRes={realRes} inline={true}/>
+        )}
+
+        {/* Info */}
+        {showInfo && (
+          <RulesModal onClose={()=>setNavTab("pronosticos")} inline={true}/>
+        )}
+
         {/* FASES FINALES */}
-        {view==="finales" && (
+        {view==="finales" && showPronosticos && (
           <FasesFinales fScores={fScores} setFScores={setFScores} fJokers={fJokers} setFJokers={setFJokers} scores={scores} realRes={realRes} subRound={subRound} setSubRound={setSubRound}/>
         )}
 
@@ -2385,13 +2411,12 @@ export default function App() {
           {id:"ranking", label:"Ranking", icon:"M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"},
           {id:"info", label:"Info", icon:"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"},
         ].map(tab=>{
-          const active = navTab===tab.id || (tab.id==="pronosticos"&&navTab==="pronosticos");
+          const active = navTab===tab.id;
           const handleClick = () => {
-            if(tab.id==="muro") { setMuroOpen(true); }
-            else if(tab.id==="ranking") { setRankModal(true); }
-            else if(tab.id==="info") { setRulesOpen(true); }
-            else if(tab.id==="especiales") { setSpOpen(true); setNavTab("especiales"); }
-            else { setNavTab(tab.id); }
+            if(tab.id==="muro") { setNavTab("muro"); setMuroOpen(false); setRankModal(false); }
+            else if(tab.id==="ranking") { setNavTab("ranking"); setMuroOpen(false); setRankModal(false); }
+            else if(tab.id==="info") { setNavTab("info"); setMuroOpen(false); setRankModal(false); }
+            else { setNavTab(tab.id); setMuroOpen(false); setRankModal(false); setRulesOpen(false); }
           };
           return (
             <button key={tab.id} onClick={handleClick}
