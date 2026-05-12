@@ -1115,6 +1115,9 @@ function AdminPanel({onLogout}) {
           </div>
         </div>
 
+        {/* Pending Users */}
+        <PendingUsers/>
+
         {/* Progress */}
         <div style={{textAlign:"center",marginBottom:"1.5rem"}}>
           <div style={{fontSize:"1.5rem",fontWeight:900,background:"linear-gradient(90deg,#f43f5e,#fb7185)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>⚽ RESULTADOS REALES</div>
