@@ -2111,6 +2111,8 @@ export default function App() {
   const [fullName,setFullName] = useState("");
   const [view,setView]     = useState("grupos"); // "grupos" | "finales"
   const [rulesOpen,setRulesOpen]   = useState(false);
+  const [navTab,setNavTab]         = useState("pronosticos"); // bottom nav active tab
+  const [infoOpen,setInfoOpen]     = useState(false);
   const [muroOpen,setMuroOpen]     = useState(false);
   const [muroIdx,setMuroIdx]       = useState(0);
   const [rankModalOpen,setRankModal] = useState(false);
@@ -2286,181 +2288,124 @@ export default function App() {
   if(user==="admin") return <AdminPanel onLogout={handleLogout}/>;
 
   return (
-    <div style={{minHeight:"100vh",fontFamily:FONT,position:"relative",color:"white",WebkitFontSmoothing:"antialiased",MozOsxFontSmoothing:"grayscale"}}>
+    <div style={{minHeight:"100vh",fontFamily:FONT,position:"relative",color:"white",WebkitFontSmoothing:"antialiased",MozOsxFontSmoothing:"grayscale",paddingBottom:"72px"}}>
       <GrassBg/>
-      <div style={{position:"relative",zIndex:1,maxWidth:"672px",margin:"0 auto",padding:"1.5rem 1rem"}}>
+      <div style={{position:"relative",zIndex:1,maxWidth:"672px",margin:"0 auto",padding:"0.75rem 1rem 0"}}>
 
         {/* User bar */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.25rem",flexWrap:"wrap",gap:"0.5rem"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"0.5rem",flexWrap:"wrap"}}>
-            <div style={{width:"1.75rem",height:"1.75rem",borderRadius:"0.5rem",background:"rgba(251,191,36,0.2)",border:"1px solid rgba(251,191,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.75rem"}}>{user[0].toUpperCase()}</div>
-            <div style={{display:"flex",flexDirection:"column",lineHeight:1.2}}>
-              <span style={{fontWeight:900,fontSize:"0.875rem",color:"rgba(255,255,255,0.85)"}}>{fullName||user}</span>
-              <span style={{fontSize:"0.6rem",color:C.muted}}>@{user}</span>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem",gap:"0.5rem"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"0.5rem"}}>
+            <div style={{width:"2rem",height:"2rem",borderRadius:"0.5rem",background:"rgba(251,191,36,0.2)",border:"1px solid rgba(251,191,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.85rem",flexShrink:0}}>{(fullName||user)[0].toUpperCase()}</div>
+            <div style={{lineHeight:1.2}}>
+              <div style={{fontWeight:900,fontSize:"0.85rem",color:"rgba(255,255,255,0.9)"}}>{fullName||user}</div>
+              <div style={{fontSize:"0.58rem",color:C.muted}}>@{user}</div>
             </div>
-            <button onClick={()=>setRulesOpen(true)} title="Reglas del juego"
-              style={{...S.btn,display:"flex",alignItems:"center",gap:"0.3rem",padding:"0.2rem 0.5rem",
-                background:"rgba(56,189,248,0.12)",border:`1px solid rgba(56,189,248,0.3)`,
-                color:C.sky,fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em"}}>
-              📋 Reglas
-            </button>
-            {myPts&&<div style={{display:"flex",alignItems:"center",gap:"0.3rem",padding:"0.2rem 0.6rem",background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:"99px"}}><span style={{fontWeight:900,fontSize:"0.75rem",color:C.gold}}>{myPts.total} pts</span><span style={{fontSize:"0.6rem",color:C.muted}}>({myPts.partidos}+{myPts.especiales})</span></div>}
-            {saveOk&&<span style={{fontSize:"0.65rem",fontWeight:700,color:C.emerald}}>✓ guardado</span>}
+            {myPts&&<div style={{padding:"0.15rem 0.5rem",background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:"99px",fontSize:"0.72rem",fontWeight:900,color:C.gold}}>{myPts.total} pts <span style={{fontSize:"0.58rem",color:C.muted,fontWeight:400}}>({myPts.partidos}+{myPts.especiales})</span></div>}
+            {saveOk&&<span style={{fontSize:"0.65rem",fontWeight:700,color:C.emerald}}>✓</span>}
           </div>
-          <button onClick={async()=>{
-            const ok=await registerPush();
-            if(ok) alert("✅ Notificaciones activadas. Te avisaremos antes de cada cierre.");
-            else alert("No se pudieron activar las notificaciones. Verificá los permisos del navegador.");
-          }} title="Activar notificaciones" style={{...S.btn,padding:"0.375rem 0.6rem",background:"rgba(56,189,248,0.1)",border:`1px solid rgba(56,189,248,0.2)`,color:C.sky,fontSize:"0.7rem"}}>🔔</button>
-          <button onClick={handleLogout} style={{...S.btn,padding:"0.375rem 0.75rem",background:C.surface,border:`1px solid ${C.border}`,color:C.muted,fontSize:"0.7rem",textTransform:"uppercase",letterSpacing:"0.08em"}}>Salir</button>
+          <div style={{display:"flex",gap:"0.4rem",alignItems:"center"}}>
+            <button onClick={async()=>{const ok=await registerPush();if(ok)alert("✅ Notificaciones activadas.");else alert("No se pudieron activar. Verificá los permisos.");}}
+              style={{...S.btn,width:"2rem",height:"2rem",borderRadius:"50%",fontSize:"0.9rem",background:"rgba(56,189,248,0.1)",border:"1px solid rgba(56,189,248,0.2)",color:C.sky}}>🔔</button>
+            <button onClick={handleLogout} style={{...S.btn,padding:"0.3rem 0.6rem",background:C.surface,border:`1px solid ${C.border}`,color:C.muted,fontSize:"0.65rem",textTransform:"uppercase"}}>Salir</button>
+          </div>
         </div>
 
-        {/* Header */}
-        <div style={{textAlign:"center",marginBottom:"2rem"}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.25rem"}}>
-            <span style={{fontSize:"1.5rem"}}>⚽</span>
-            <h1 style={{fontSize:"clamp(2rem,8vw,3.5rem)",fontWeight:900,letterSpacing:"-1px",margin:0,lineHeight:1}}>
-              PRODE <span style={{background:`linear-gradient(90deg,${C.gold},${C.goldL})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>ELITE</span>
-            </h1>
-            <span style={{fontSize:"1.5rem"}}>🏆</span>
-          </div>
-          <div style={{fontSize:"clamp(3rem,12vw,5rem)",fontWeight:900,background:`linear-gradient(90deg,${C.amber},#fff,${C.amber})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1}}>2026</div>
-          <p style={{color:C.muted,fontSize:"0.75rem",letterSpacing:"0.2em",marginTop:"0.5rem"}}>USA · MÉXICO · CANADÁ</p>
+        {/* View tabs */}
+        <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>
+          <button onClick={()=>setView("grupos")} style={{...S.btn,flex:1,padding:"0.6rem",fontSize:"0.8rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",border:"2px solid",borderColor:view==="grupos"?C.gold:"rgba(255,255,255,0.12)",color:view==="grupos"?"#000":C.muted,background:view==="grupos"?`linear-gradient(135deg,${C.gold},${C.goldL})`:"rgba(255,255,255,0.04)",transition:"all 0.2s"}}>⚽ Fase Grupos</button>
+          <button onClick={()=>setView("finales")} style={{...S.btn,flex:1,padding:"0.6rem",fontSize:"0.8rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",border:"2px solid",borderColor:view==="finales"?C.violet:"rgba(255,255,255,0.12)",color:view==="finales"?"#000":C.muted,background:view==="finales"?`linear-gradient(135deg,${C.violet},#c4b5fd)`:"rgba(255,255,255,0.04)",transition:"all 0.2s"}}>🏆 Fases Finales</button>
         </div>
 
-        {/* -- NAV TABS -- */}
-        {(()=>{
-          const lockedMatches = ALL_MATCHES.filter(m=>isLocked(m.id));
-          const muroActive = lockedMatches.length > 0;
-          return (
-            <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"2rem",justifyContent:"center",flexWrap:"wrap"}}>
-              {/* FASE GRUPOS */}
-              <button onClick={()=>setView("grupos")} style={{...S.btn,position:"relative",padding:"0.75rem 1.75rem",fontSize:"0.9rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",border:"2px solid",borderColor:view==="grupos"?C.gold:"rgba(255,255,255,0.12)",color:view==="grupos"?"#000":C.muted,background:view==="grupos"?`linear-gradient(135deg,${C.gold},${C.goldL})`:"rgba(255,255,255,0.04)",boxShadow:view==="grupos"?`0 0 24px rgba(251,191,36,0.4)`:"none",transition:"all 0.25s"}}>
-                ⚽ Fase Grupos
-                {view==="grupos"&&<span style={{position:"absolute",bottom:"-6px",left:"50%",transform:"translateX(-50%)",width:"6px",height:"6px",borderRadius:"50%",background:C.gold,boxShadow:`0 0 8px ${C.gold}`}}/>}
-              </button>
-
-              {/* FASES FINALES */}
-              <button onClick={()=>setView("finales")} style={{...S.btn,position:"relative",padding:"0.75rem 1.75rem",fontSize:"0.9rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",border:"2px solid",borderColor:view==="finales"?C.violet:"rgba(255,255,255,0.12)",color:view==="finales"?"#000":C.muted,background:view==="finales"?`linear-gradient(135deg,${C.violet},#c4b5fd)`:"rgba(255,255,255,0.04)",boxShadow:view==="finales"?`0 0 24px rgba(167,139,250,0.4)`:"none",transition:"all 0.25s"}}>
-                🏆 Fases Finales
-                {view==="finales"&&<span style={{position:"absolute",bottom:"-6px",left:"50%",transform:"translateX(-50%)",width:"6px",height:"6px",borderRadius:"50%",background:C.violet,boxShadow:`0 0 8px ${C.violet}`}}/>}
-              </button>
-
-              {/* MURO circular button — always active */}
-              <button onClick={()=>setMuroOpen(true)} title="Ver muro de pronósticos"
-                style={{...S.btn,width:"2.75rem",height:"2.75rem",borderRadius:"50%",padding:0,fontSize:"1rem",flexShrink:0,
-                  background:"rgba(52,211,153,0.15)",
-                  border:`2px solid ${C.emerald}`,
-                  color:C.emerald,
-                  boxShadow:`0 0 14px rgba(52,211,153,0.3)`,
-                  transition:"all 0.25s",position:"relative"}}>
-                👁️
-                <span style={{position:"absolute",top:"-3px",right:"-3px",width:"8px",height:"8px",borderRadius:"50%",background:C.emerald,boxShadow:`0 0 6px ${C.emerald}`}}/>
-              </button>
-
-              {/* RANKING circular button */}
-              <button onClick={()=>setRankModal(true)} title="Ver ranking general"
-                style={{...S.btn,width:"2.75rem",height:"2.75rem",borderRadius:"50%",padding:0,fontSize:"1rem",flexShrink:0,
-                  background:"rgba(167,139,250,0.15)",
-                  border:`2px solid ${C.violet}`,
-                  color:C.violet,
-                  boxShadow:`0 0 14px rgba(167,139,250,0.3)`,
-                  transition:"all 0.25s",position:"relative"}}>
-                🏅
-                <span style={{position:"absolute",top:"-3px",right:"-3px",width:"8px",height:"8px",borderRadius:"50%",background:C.violet,boxShadow:`0 0 6px ${C.violet}`}}/>
-              </button>
-            </div>
-          );
-        })()}
-
-        {/* -- MURO MODAL -- */}
+        {/* Modals */}
         {rulesOpen && <RulesModal onClose={()=>setRulesOpen(false)}/>}
         {muroOpen && <MuroModal onClose={()=>setMuroOpen(false)} muroIdx={muroIdx} setMuroIdx={setMuroIdx} currentUser={user}/>}
-
-        {/* -- RANKING MODAL -- */}
         {rankModalOpen && <RankingModal onClose={()=>setRankModal(false)} currentUser={user} realRes={realRes}/>}
-
-        {/* -- FASE GRUPOS -- */}
-        {view==="grupos" && (<>
-
-        {/* Progress bar */}
-        <div style={{maxWidth:"320px",margin:"0 auto 1.75rem"}}>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.65rem",color:C.muted,marginBottom:"0.4rem",fontWeight:600}}>
-            <span>{totalPlayed} pronósticos completados</span>
-            <span>{ALL_MATCHES.length} partidos</span>
-          </div>
-          <div style={{height:"5px",background:"rgba(255,255,255,0.08)",borderRadius:"99px",overflow:"hidden"}}>
-            <div style={{height:"100%",background:`linear-gradient(90deg,${C.gold},${C.goldL})`,borderRadius:"99px",width:`${ALL_MATCHES.length?(totalPlayed/ALL_MATCHES.length)*100:0}%`,transition:"width 0.5s"}}/>
-          </div>
-        </div>
-
-        {/* Especiales */}
-        <div style={S.section}>
-          <SpecialPicks sp={sp} onChange={(k,v)=>setSp(p=>({...p,[k]:v}))} isOpen={spOpen} onToggle={()=>setSpOpen(p=>!p)}/>
-        </div>
-
-        {/* Fechas */}
-        <div style={S.section}>
-          <div style={S.hdr}>
-            <h2 style={{margin:0,fontSize:"1.1rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(255,255,255,0.8)"}}>Pronósticos</h2>
-            <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,rgba(251,191,36,0.3),transparent)`}}/>
-            <span style={{fontSize:"0.6rem",color:C.muted,letterSpacing:"0.1em"}}>FASE DE GRUPOS</span>
-          </div>
-          {/* Joker counter — only in fase grupos */}
-          <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.75rem"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"0.35rem",padding:"0.25rem 0.6rem",background:jLeft>0?"rgba(251,191,36,0.08)":"rgba(255,255,255,0.04)",border:`1px solid ${jLeft>0?"rgba(251,191,36,0.25)":C.border}`,borderRadius:"99px"}}>
-              <span style={{fontSize:"0.85rem"}}>🃏</span>
-              <span style={{fontWeight:900,fontSize:"0.72rem",color:jLeft>0?C.gold:C.muted}}>{jLeft} comodín{jLeft!==1?"es":""} restante{jLeft!==1?"s":""}</span>
+        {spOpen && (
+          <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"1rem",paddingTop:"3rem"}}>
+            <div onClick={()=>setSpOpen(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.8)"}}/>
+            <div style={{position:"relative",width:"100%",maxWidth:"540px",maxHeight:"86vh",overflowY:"auto",background:"#0a1a0a",border:`1px solid ${C.border}`,borderRadius:"1.25rem",padding:"1.25rem"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem"}}>
+                <span style={{fontWeight:900,fontSize:"0.9rem",textTransform:"uppercase",color:C.gold}}>Pronósticos Especiales</span>
+                <button onClick={()=>setSpOpen(false)} style={{...S.btn,width:"1.5rem",height:"1.5rem",borderRadius:"50%",background:"rgba(255,255,255,0.08)",color:C.muted,border:"none",fontSize:"0.85rem"}}>✕</button>
+              </div>
+              <SpecialPicks sp={sp} onChange={(k,v)=>setSp(p=>({...p,[k]:v}))} isOpen={true} onToggle={()=>{}}/>
             </div>
-            <span style={{fontSize:"0.6rem",color:"rgba(255,255,255,0.2)"}}>de 2 · puntuación x2</span>
           </div>
-          <div style={{height:"420px",overflowY:"auto",paddingRight:"4px"}}>
-            {vF.map((f,i)=>(
-              <FechaSection key={f.id} fecha={f} index={i} isOpen={openF===f.id} onToggle={()=>setOpenF(p=>p===f.id?null:f.id)} scores={scores} onScore={handleScore} jokers={jokers} onJoker={handleJoker} jLeft={jLeft}/>
-            ))}
-            {hasMore&&<div style={{display:"flex",justifyContent:"center",padding:"0.75rem 0"}}>
-              <button onClick={()=>setVis(c=>Math.min(c+PAGE_SIZE,FECHAS.length))} style={{...S.btn,display:"flex",alignItems:"center",gap:"0.5rem",padding:"0.625rem 1.25rem",background:C.surface,border:`1px solid ${C.border}`,color:C.muted,fontSize:"0.75rem",textTransform:"uppercase",letterSpacing:"0.1em"}}>
-                <span>Ver más fechas</span><span style={{padding:"0.1rem 0.4rem",background:"rgba(251,191,36,0.15)",color:C.gold,borderRadius:"99px",fontSize:"0.65rem",fontWeight:900}}>+{Math.min(PAGE_SIZE,rem)}</span>
-              </button>
-            </div>}
-            {!hasMore&&FECHAS.length>PAGE_SIZE&&<div style={{display:"flex",justifyContent:"center",padding:"0.75rem 0"}}>
-              <button onClick={()=>{setVis(PAGE_SIZE);setOpenF(null);}} style={{...S.btn,padding:"0.5rem 1rem",background:C.surface,border:`1px solid ${C.border}`,color:C.muted,fontSize:"0.75rem",textTransform:"uppercase"}}>Ver menos</button>
-            </div>}
+        )}
+        {navTab==="posiciones" && (
+          <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"1rem",paddingTop:"3rem"}}>
+            <div onClick={()=>setNavTab("pronosticos")} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.8)"}}/>
+            <div style={{position:"relative",width:"100%",maxWidth:"540px",maxHeight:"86vh",display:"flex",flexDirection:"column",background:"#0a1a0a",border:`1px solid ${C.border}`,borderRadius:"1.25rem",overflow:"hidden"}}>
+              <div style={{padding:"0.75rem 1rem",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+                <span style={{fontWeight:900,fontSize:"0.9rem",textTransform:"uppercase",color:C.emerald}}>Tabla de Posiciones</span>
+                <button onClick={()=>setNavTab("pronosticos")} style={{...S.btn,width:"1.5rem",height:"1.5rem",borderRadius:"50%",background:"rgba(255,255,255,0.08)",color:C.muted,border:"none",fontSize:"0.85rem"}}>✕</button>
+              </div>
+              <div style={{overflowY:"auto",flex:1,padding:"0.75rem"}}>
+                {Object.keys(GROUPS).map((gid,i)=>(
+                  <GroupTable key={gid} gid={gid} gi={i} scores={scores} isOpen={openG===gid} onToggle={()=>setOpenG(p=>p===gid?null:gid)}/>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* Posiciones */}
-        <div style={S.section}>
-          <div style={S.hdr}>
-            <h2 style={{margin:0,fontSize:"1.1rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(255,255,255,0.8)"}}>Posiciones</h2>
-            <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(255,255,255,0.15),transparent)"}}/>
-            <span style={{fontSize:"0.6rem",color:C.muted,letterSpacing:"0.1em"}}>FASE DE GRUPOS</span>
-          </div>
-          <div style={{height:"420px",overflowY:"auto",paddingRight:"4px"}}>
-            {Object.keys(GROUPS).map((gid,i)=>(
-              <GroupTable key={gid} gid={gid} gi={i} scores={scores} isOpen={openG===gid} onToggle={()=>setOpenG(p=>p===gid?null:gid)}/>
-            ))}
-          </div>
-        </div>
-
-        {/* Ranking */}
-
-        </>)}
-
-        {/* -- FASES FINALES -- */}
-        {view==="finales" && (
-          <FasesFinales
-            fScores={fScores} setFScores={setFScores}
-            fJokers={fJokers} setFJokers={setFJokers}
-            scores={scores} realRes={realRes}
-            subRound={subRound} setSubRound={setSubRound}
-          />
         )}
 
-        <div style={{textAlign:"center",paddingBottom:"2rem",fontSize:"0.6rem",color:"rgba(255,255,255,0.2)",letterSpacing:"0.15em",textTransform:"uppercase"}}>
-          Prode Elite · Mundial 2026 · Horarios en hora boliviana (BOT, UTC-4)
-        </div>
+        {/* FASE GRUPOS */}
+        {view==="grupos" && (<>
+          <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.75rem"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"0.35rem",padding:"0.2rem 0.55rem",background:jLeft>0?"rgba(251,191,36,0.08)":"rgba(255,255,255,0.04)",border:`1px solid ${jLeft>0?"rgba(251,191,36,0.25)":C.border}`,borderRadius:"99px"}}>
+              <span style={{fontSize:"0.8rem"}}>🃏</span>
+              <span style={{fontWeight:900,fontSize:"0.68rem",color:jLeft>0?C.gold:C.muted}}>{jLeft} comodín{jLeft!==1?"es":""}</span>
+            </div>
+            <div style={{flex:1,height:"3px",background:"rgba(255,255,255,0.06)",borderRadius:"99px",overflow:"hidden"}}>
+              <div style={{height:"100%",background:`linear-gradient(90deg,${C.gold},${C.goldL})`,width:`${ALL_MATCHES.length?(totalPlayed/ALL_MATCHES.length)*100:0}%`,transition:"width 0.5s"}}/>
+            </div>
+            <span style={{fontSize:"0.6rem",color:C.muted}}>{totalPlayed}/{ALL_MATCHES.length}</span>
+          </div>
+          <div style={{overflowY:"auto",maxHeight:"calc(100vh - 200px)",paddingRight:"2px"}}>
+            {FECHAS.map((f,i)=>(
+              <FechaSection key={f.id} fecha={f} index={i} isOpen={openF===f.id} onToggle={()=>setOpenF(p=>p===f.id?null:f.id)} scores={scores} onScore={handleScore} jokers={jokers} onJoker={handleJoker} jLeft={jLeft}/>
+            ))}
+          </div>
+        </>)}
+
+        {/* FASES FINALES */}
+        {view==="finales" && (
+          <FasesFinales fScores={fScores} setFScores={setFScores} fJokers={fJokers} setFJokers={setFJokers} scores={scores} realRes={realRes} subRound={subRound} setSubRound={setSubRound}/>
+        )}
+
       </div>
+
+      {/* BOTTOM NAV */}
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:"rgba(10,26,10,0.97)",borderTop:`1px solid rgba(255,255,255,0.1)`,backdropFilter:"blur(12px)",display:"flex",alignItems:"stretch",justifyContent:"space-around",height:"64px"}}>
+        {[
+          {id:"pronosticos", label:"Pronósticos", icon:"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"},
+          {id:"especiales", label:"Especiales", icon:"M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"},
+          {id:"posiciones", label:"Posiciones", icon:"M3 10h18M3 14h18M3 6h18M3 18h18"},
+          {id:"muro", label:"Muro", icon:"M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"},
+          {id:"ranking", label:"Ranking", icon:"M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"},
+          {id:"info", label:"Info", icon:"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"},
+        ].map(tab=>{
+          const active = navTab===tab.id || (tab.id==="pronosticos"&&navTab==="pronosticos");
+          const handleClick = () => {
+            if(tab.id==="muro") { setMuroOpen(true); }
+            else if(tab.id==="ranking") { setRankModal(true); }
+            else if(tab.id==="info") { setRulesOpen(true); }
+            else if(tab.id==="especiales") { setSpOpen(true); setNavTab("especiales"); }
+            else { setNavTab(tab.id); }
+          };
+          return (
+            <button key={tab.id} onClick={handleClick}
+              style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.2rem",background:"none",border:"none",cursor:"pointer",padding:"0.25rem 0",position:"relative",fontFamily:FONT}}>
+              {active&&<span style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:"24px",height:"2px",background:C.gold,borderRadius:"0 0 2px 2px"}}/>}
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active?C.gold:"rgba(255,255,255,0.35)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d={tab.icon}/>
+              </svg>
+              <span style={{fontSize:"0.52rem",fontWeight:active?700:400,color:active?C.gold:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.05em"}}>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
     </div>
   );
 }
