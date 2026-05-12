@@ -179,7 +179,7 @@ const sDeleteAll = async () => {
     sbFetch("fscores?username=neq.impossible","DELETE"),
     sbFetch("fjokers?username=neq.impossible","DELETE"),
     sbFetch("real_results?id=eq.singleton","DELETE"),
-    sbFetch("users?username=neq.impossible","DELETE"),
+    sbFetch("users?username=neq.admin","DELETE"),  // keep admin
   ]);
 };
 
