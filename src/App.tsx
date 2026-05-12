@@ -506,6 +506,41 @@ function FlagImg({team, size=24}) {
   );
 }
 
+// --- PUSH NOTIFICATIONS -------------------------------------------------------
+const VAPID_PUBLIC_KEY = "BHqtPP5vvCtb4hp9Lm0keOdS4M0VHBfbkVQ-RBcR6IiSV1MCP7qETNc8a3fQUxJtvgI0jTlykk0Xg7pweHIlvr4";
+
+const urlB64ToUint8Array = (base64String) => {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+};
+
+const registerPush = async () => {
+  try {
+    if(!('serviceWorker' in navigator)){alert("Tu navegador no soporta notificaciones push.");return false;}
+    if(!('PushManager' in window)){alert("Tu navegador no soporta notificaciones push.");return false;}
+    // Register service worker
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    // Request permission
+    const permission = await Notification.requestPermission();
+    if(permission !== 'granted'){alert("Permiso denegado. Habilitá las notificaciones en tu navegador.");return false;}
+    // Subscribe
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    // Save to Supabase
+    await sbFetch("push_subscriptions", "POST", {subscription: sub.toJSON()});
+    return true;
+  } catch(e) {
+    console.error("Push error:", e);
+    alert("Error al activar notificaciones: " + e.message);
+    return false;
+  }
+};
+
 const GCOLORS = ["#f59e0b","#38bdf8","#a78bfa","#34d399","#fb7185","#f97316","#22d3ee","#f472b6","#a3e635","#818cf8","#2dd4bf","#e879f9"];
 const FBADGES = [...GCOLORS,...GCOLORS];
 
