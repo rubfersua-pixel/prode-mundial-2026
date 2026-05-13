@@ -2205,7 +2205,7 @@ function FloatingInfo({onOpen}) {
 }
 
 // --- DESIGNADOS VIEW ----------------------------------------------------------
-function DesignadosView({currentUser}) {
+function DesignadosView({currentUser, mode='designados'}) {
   const [data,setData] = useState([]);
   const [loading,setLoading] = useState(true);
   const desigLocked = isDesignatedLocked();
@@ -2247,69 +2247,36 @@ function DesignadosView({currentUser}) {
     <div style={{textAlign:"center",padding:"3rem 0",color:"rgba(255,255,255,0.3)",fontSize:"0.8rem"}}>Cargando...</div>
   );
 
-  return (
-    <div>
-      <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"1.25rem"}}>
-        <h2 style={{margin:0,fontSize:"1rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(255,255,255,0.8)"}}>Designados</h2>
-        <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(251,191,36,0.3),transparent)"}}/>
-      </div>
-
-      {/* Goleador y Arquero Designado */}
-      <div style={{marginBottom:"1.25rem"}}>
-        <div style={{fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.4)",marginBottom:"0.6rem"}}>
-          {desigLocked ? "👟 Goleador & 🧤 Arquero Designado" : "🔒 Se revelan al inicio del torneo · 14 mayo 07:50 BOT"}
-        </div>
-        {!desigLocked ? (
-          <div style={{padding:"1.25rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"0.75rem",textAlign:"center"}}>
-            <div style={{fontSize:"1.5rem",marginBottom:"0.5rem"}}>🔒</div>
-            <div style={{fontSize:"0.75rem",fontWeight:700,color:"rgba(255,255,255,0.5)"}}>Los designados se revelan 10 minutos antes del primer partido</div>
-            <div style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.25)",marginTop:"0.3rem"}}>14 de mayo · 07:50 BOT</div>
-          </div>
-        ) : (
-          <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
-            {data.map(u=>(
-              <div key={u.username} style={{display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.5rem 0.75rem",background:u.username===currentUser?"rgba(251,191,36,0.06)":"rgba(255,255,255,0.03)",border:`1px solid ${u.username===currentUser?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.07)"}`,borderRadius:"0.6rem"}}>
-                <div style={{width:"1.6rem",height:"1.6rem",borderRadius:"0.35rem",background:"rgba(251,191,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.7rem",flexShrink:0}}>{(u.fullName)[0].toUpperCase()}</div>
-                <div style={{fontSize:"0.7rem",fontWeight:700,color:"rgba(255,255,255,0.7)",minWidth:"80px",flexShrink:0}}>{u.fullName}</div>
-                <div style={{flex:1,display:"flex",gap:"0.5rem",flexWrap:"wrap"}}>
-                  <span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.5)"}}>👟 <span style={{color:"white",fontWeight:700}}>{playerName(u.goleadorDesignado)||"—"}</span></span>
-                  <span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.5)"}}>🧤 <span style={{color:"white",fontWeight:700}}>{playerName(u.arqueroDesignado)||"—"}</span></span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Campeón, Subcampeón, Goleador */}
-      <div>
-        <div style={{fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.4)",marginBottom:"0.6rem"}}>
-          {allLocked ? "🏆 Campeón · Subcampeón · Goleador" : "🔒 Se revelan antes del 2° partido de México · 15 mayo 17:50 BOT"}
-        </div>
-        {!allLocked ? (
-          <div style={{padding:"1.25rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"0.75rem",textAlign:"center"}}>
-            <div style={{fontSize:"1.5rem",marginBottom:"0.5rem"}}>🔒</div>
-            <div style={{fontSize:"0.75rem",fontWeight:700,color:"rgba(255,255,255,0.5)"}}>Campeón, Subcampeón y Goleador se revelan antes del 2° partido de México</div>
-            <div style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.25)",marginTop:"0.3rem"}}>15 de mayo · 17:50 BOT</div>
-          </div>
-        ) : (
-          <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
-            {data.map(u=>(
-              <div key={u.username} style={{display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.5rem 0.75rem",background:u.username===currentUser?"rgba(251,191,36,0.06)":"rgba(255,255,255,0.03)",border:`1px solid ${u.username===currentUser?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.07)"}`,borderRadius:"0.6rem"}}>
-                <div style={{width:"1.6rem",height:"1.6rem",borderRadius:"0.35rem",background:"rgba(251,191,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.7rem",flexShrink:0}}>{(u.fullName)[0].toUpperCase()}</div>
-                <div style={{fontSize:"0.7rem",fontWeight:700,color:"rgba(255,255,255,0.7)",minWidth:"80px",flexShrink:0}}>{u.fullName}</div>
-                <div style={{flex:1,display:"flex",gap:"0.5rem",flexWrap:"wrap"}}>
-                  {u.campeon&&T[u.campeon]&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.5)"}}>🏆 <span style={{color:"white",fontWeight:700}}>{T[u.campeon].short}</span></span>}
-                  {u.subcampeon&&T[u.subcampeon]&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.5)"}}>🥈 <span style={{color:"white",fontWeight:700}}>{T[u.subcampeon].short}</span></span>}
-                  {u.goleador&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.5)"}}>👟 <span style={{color:"white",fontWeight:700}}>{playerName(u.goleador)}</span></span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+  const userRow = (u, children) => (
+    <div key={u.username} style={{display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.5rem 0.75rem",background:u.username===currentUser?"rgba(251,191,36,0.06)":"rgba(255,255,255,0.03)",border:`1px solid ${u.username===currentUser?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.07)"}`,borderRadius:"0.6rem",marginBottom:"0.4rem"}}>
+      <div style={{width:"1.6rem",height:"1.6rem",borderRadius:"0.35rem",background:"rgba(251,191,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.7rem",flexShrink:0}}>{(u.fullName)[0].toUpperCase()}</div>
+      <div style={{fontSize:"0.7rem",fontWeight:700,color:"rgba(255,255,255,0.7)",minWidth:"80px",flexShrink:0}}>{u.fullName}</div>
+      <div style={{flex:1,display:"flex",gap:"0.5rem",flexWrap:"wrap"}}>{children}</div>
     </div>
   );
+
+  if(mode==="designados") return (
+    <div style={{padding:"0 1rem"}}>
+      <div style={{fontSize:"0.6rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.35)",marginBottom:"0.75rem"}}>👟 Goleador Designado · 🧤 Arquero Designado</div>
+      {data.map(u=>userRow(u,<>
+        <span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.45)"}}>👟 <span style={{color:"white",fontWeight:700}}>{u.goleadorDesignado||"—"}</span></span>
+        <span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.45)"}}>🧤 <span style={{color:"white",fontWeight:700}}>{u.arqueroDesignado||"—"}</span></span>
+      </>))}
+    </div>
+  );
+
+  if(mode==="todos") return (
+    <div style={{padding:"0 1rem"}}>
+      <div style={{fontSize:"0.6rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.35)",marginBottom:"0.75rem"}}>🏆 Campeón · 🥈 Subcampeón · 👟 Goleador</div>
+      {data.map(u=>userRow(u,<>
+        {u.campeon&&T[u.campeon]&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.45)"}}>🏆 <span style={{color:"white",fontWeight:700}}>{T[u.campeon].short}</span></span>}
+        {u.subcampeon&&T[u.subcampeon]&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.45)"}}>🥈 <span style={{color:"white",fontWeight:700}}>{T[u.subcampeon].short}</span></span>}
+        {u.goleador&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.45)"}}>👟 <span style={{color:"white",fontWeight:700}}>{u.goleador}</span></span>}
+      </>))}
+    </div>
+  );
+
+  return null;
 }
 
 // --- APP ----------------------------------------------------------------------
@@ -2334,6 +2301,7 @@ export default function App() {
   const [spOpen,setSpOpen] = useState(false);
   const [openF,setOpenF]   = useState(null);
   const [openG,setOpenG]   = useState(null);
+  const [openEspSection,setOpenEspSection] = useState('especiales'); // 'especiales'|'designados'|'todos'|null
   const [vis,setVis]       = useState(PAGE_SIZE);
   const [saveOk,setSaveOk] = useState(false);
   const [ranking,setRank]  = useState([]);
@@ -2502,7 +2470,6 @@ export default function App() {
   const showEspeciales = navTab==="especiales";
   const showPosiciones = navTab==="posiciones";
   const showPronosticos = navTab==="pronosticos";
-  const showDesignados = navTab==="designados";
 
   return (
     <div style={{height:"100vh",fontFamily:FONT,position:"relative",color:"white",WebkitFontSmoothing:"antialiased",MozOsxFontSmoothing:"grayscale",display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -2538,6 +2505,77 @@ export default function App() {
             </div>
           )}
 
+          {/* Sub-header pronósticos grupos: título + progreso + comodines */}
+          {showPronosticos && view==="grupos" && (
+            <div style={{marginTop:"0.75rem",paddingTop:"0.65rem",borderTop:"1px solid rgba(255,255,255,0.06)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"0.4rem"}}>
+                <h2 style={{margin:0,fontSize:"0.85rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(255,255,255,0.8)"}}>Pronósticos</h2>
+                <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,rgba(251,191,36,0.3),transparent)`}}/>
+                <span style={{fontSize:"0.55rem",color:C.muted}}>FASE DE GRUPOS</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.4rem"}}>
+                <div style={{flex:1,height:"3px",background:"rgba(255,255,255,0.08)",borderRadius:"99px",overflow:"hidden"}}>
+                  <div style={{height:"100%",background:`linear-gradient(90deg,${C.gold},${C.goldL})`,width:`${ALL_MATCHES.length?(totalPlayed/ALL_MATCHES.length)*100:0}%`,transition:"width 0.5s"}}/>
+                </div>
+                <span style={{fontSize:"0.55rem",color:C.muted,flexShrink:0}}>{totalPlayed}/{ALL_MATCHES.length}</span>
+              </div>
+              <div style={{display:"inline-flex",alignItems:"center",gap:"0.35rem",padding:"0.2rem 0.5rem",background:jLeft>0?"rgba(251,191,36,0.08)":"rgba(255,255,255,0.04)",border:`1px solid ${jLeft>0?"rgba(251,191,36,0.25)":C.border}`,borderRadius:"99px"}}>
+                <span style={{fontSize:"0.75rem"}}>🃏</span>
+                <span style={{fontWeight:900,fontSize:"0.62rem",color:jLeft>0?C.gold:C.muted}}>{jLeft} comodín{jLeft!==1?"es":""} restante{jLeft!==1?"s":""}</span>
+                <span style={{fontSize:"0.55rem",color:"rgba(255,255,255,0.2)"}}>· x2 pts</span>
+              </div>
+            </div>
+          )}
+
+          {/* Especiales accordion bars — sticky, solo en especiales */}
+          {showEspeciales && (
+            <div style={{marginTop:"0.6rem",borderTop:"1px solid rgba(255,255,255,0.06)"}}>
+
+              <button onClick={()=>setOpenEspSection(p=>p==="especiales"?null:"especiales")}
+                style={{...S.btn,width:"100%",display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.55rem 0",background:"none",border:"none",borderBottom:`1px solid rgba(255,255,255,0.05)`}}>
+                <span style={{fontSize:"0.9rem"}}>⭐</span>
+                <div style={{flex:1,textAlign:"left"}}>
+                  <div style={{fontSize:"0.72rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.06em",color:C.gold}}>Pronósticos Especiales</div>
+                  <div style={{fontSize:"0.52rem",color:C.muted}}>Campeón · Goleador · Arquero · Clasificados</div>
+                </div>
+                {isSpecialsLocked()
+                  ? <span style={{fontSize:"0.6rem",fontWeight:900,background:"rgba(251,113,133,0.15)",color:"#fb7185",padding:"0.15rem 0.4rem",borderRadius:"0.3rem"}}>🔒</span>
+                  : <span style={{fontSize:"0.6rem",color:C.muted}}>{[sp.campeon,sp.subcampeon,sp.goleador,sp.goleadorDesignado,sp.arqueroDesignado].filter(Boolean).length}/5</span>
+                }
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={openEspSection==="especiales"?"M18 15l-6-6-6 6":"M6 9l6 6 6-6"}/>
+                </svg>
+              </button>
+
+              <button onClick={()=>{ if(isDesignatedLocked()) setOpenEspSection(p=>p==="designados"?null:"designados"); }}
+                style={{...S.btn,width:"100%",display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.55rem 0",background:"none",border:"none",borderBottom:`1px solid rgba(255,255,255,0.05)`,opacity:isDesignatedLocked()?1:0.45,cursor:isDesignatedLocked()?"pointer":"default"}}>
+                <span style={{fontSize:"0.9rem"}}>🎯</span>
+                <div style={{flex:1,textAlign:"left"}}>
+                  <div style={{fontSize:"0.72rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.06em",color:isDesignatedLocked()?C.emerald:"rgba(255,255,255,0.35)"}}>Designados</div>
+                  <div style={{fontSize:"0.52rem",color:C.muted}}>{isDesignatedLocked()?"Goleador · Arquero de todos":"🔒 Disponible 14 mayo · 07:50 BOT"}</div>
+                </div>
+                {isDesignatedLocked()
+                  ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d={openEspSection==="designados"?"M18 15l-6-6-6 6":"M6 9l6 6 6-6"}/></svg>
+                  : <span style={{fontSize:"0.7rem"}}>🔒</span>
+                }
+              </button>
+
+              <button onClick={()=>{ if(isSpecialsLocked()) setOpenEspSection(p=>p==="todos"?null:"todos"); }}
+                style={{...S.btn,width:"100%",display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.55rem 0",background:"none",border:"none",opacity:isSpecialsLocked()?1:0.45,cursor:isSpecialsLocked()?"pointer":"default"}}>
+                <span style={{fontSize:"0.9rem"}}>🏆</span>
+                <div style={{flex:1,textAlign:"left"}}>
+                  <div style={{fontSize:"0.72rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.06em",color:isSpecialsLocked()?C.violet:"rgba(255,255,255,0.35)"}}>Especiales de todos</div>
+                  <div style={{fontSize:"0.52rem",color:C.muted}}>{isSpecialsLocked()?"Campeón · Subcampeón · Goleador de todos":"🔒 Disponible 15 mayo · 17:50 BOT"}</div>
+                </div>
+                {isSpecialsLocked()
+                  ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d={openEspSection==="todos"?"M18 15l-6-6-6 6":"M6 9l6 6 6-6"}/></svg>
+                  : <span style={{fontSize:"0.7rem"}}>🔒</span>
+                }
+              </button>
+
+            </div>
+          )}
+
         </div>{/* END STICKY HEADER */}
 
         {/* SCROLLABLE CONTENT */}
@@ -2549,39 +2587,26 @@ export default function App() {
         {rankModalOpen && <RankingModal onClose={()=>{setRankModal(false);setNavTab("pronosticos");}} currentUser={user} realRes={realRes}/>}
 
         {/* FASE GRUPOS - Pronósticos */}
-        {view==="grupos" && showPronosticos && (<>
-          <div style={{marginBottom:"0.75rem",marginTop:"0.85rem"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"0.5rem"}}>
-              <h2 style={{margin:0,fontSize:"1rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(255,255,255,0.8)"}}>Pronósticos</h2>
-              <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,rgba(251,191,36,0.3),transparent)`}}/>
-              <span style={{fontSize:"0.6rem",color:C.muted}}>FASE DE GRUPOS</span>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.5rem"}}>
-              <div style={{flex:1,height:"4px",background:"rgba(255,255,255,0.08)",borderRadius:"99px",overflow:"hidden"}}>
-                <div style={{height:"100%",background:`linear-gradient(90deg,${C.gold},${C.goldL})`,width:`${ALL_MATCHES.length?(totalPlayed/ALL_MATCHES.length)*100:0}%`,transition:"width 0.5s"}}/>
-              </div>
-              <span style={{fontSize:"0.6rem",color:C.muted,flexShrink:0}}>{totalPlayed}/{ALL_MATCHES.length}</span>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:"0.35rem",padding:"0.25rem 0.6rem",background:jLeft>0?"rgba(251,191,36,0.08)":"rgba(255,255,255,0.04)",border:`1px solid ${jLeft>0?"rgba(251,191,36,0.25)":C.border}`,borderRadius:"99px",display:"inline-flex"}}>
-              <span style={{fontSize:"0.8rem"}}>🃏</span>
-              <span style={{fontWeight:900,fontSize:"0.68rem",color:jLeft>0?C.gold:C.muted}}>{jLeft} comodín{jLeft!==1?"es":""} restante{jLeft!==1?"s":""}</span>
-              <span style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.2)"}}>· x2 pts</span>
-            </div>
-          </div>
-          <div style={{paddingBottom:"0.5rem"}}>
+        {view==="grupos" && showPronosticos && (
+          <div style={{paddingTop:"0.5rem",paddingBottom:"0.5rem"}}>
             {FECHAS.map((f,i)=>(
               <FechaSection key={f.id} fecha={f} index={i} isOpen={openF===f.id} onToggle={()=>setOpenF(p=>p===f.id?null:f.id)} scores={scores} onScore={handleScore} jokers={jokers} onJoker={handleJoker} jLeft={jLeft}/>
             ))}
           </div>
-        </>)}
+        )}
 
-        {/* FASE GRUPOS - Especiales */}
+        {/* FASE GRUPOS - Especiales: content only, bars are in sticky header */}
         {view==="grupos" && showEspeciales && (
-          <div style={{paddingTop:"0.85rem"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"1rem"}}>
-              <h2 style={{margin:0,fontSize:"1rem",fontWeight:900,textTransform:"uppercase",color:C.gold}}>Pronósticos Especiales</h2>
-            </div>
-            <SpecialPicks sp={sp} onChange={(k,v)=>setSp(p=>({...p,[k]:v}))} isOpen={true} onToggle={()=>{}} locked={isSpecialsLocked()} designatedLocked={isDesignatedLocked()}/>
+          <div style={{paddingTop:"0.5rem"}}>
+            {openEspSection==="especiales" && (
+              <SpecialPicks sp={sp} onChange={(k,v)=>setSp(p=>({...p,[k]:v}))} isOpen={true} onToggle={()=>{}} locked={isSpecialsLocked()} designatedLocked={isDesignatedLocked()}/>
+            )}
+            {openEspSection==="designados" && isDesignatedLocked() && (
+              <DesignadosView currentUser={user} mode="designados"/>
+            )}
+            {openEspSection==="todos" && isSpecialsLocked() && (
+              <DesignadosView currentUser={user} mode="todos"/>
+            )}
           </div>
         )}
 
@@ -2619,13 +2644,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Designados */}
-        {showDesignados && (
-          <div style={{paddingTop:"0.85rem"}}>
-            <DesignadosView currentUser={user}/>
-          </div>
-        )}
-
         {/* FASES FINALES */}
         {view==="finales" && showPronosticos && (
           <FasesFinales fScores={fScores} setFScores={setFScores} fJokers={fJokers} setFJokers={setFJokers} scores={scores} realRes={realRes} subRound={subRound} setSubRound={setSubRound} openF={openF} setOpenF={setOpenF}/>
@@ -2635,9 +2653,6 @@ export default function App() {
 
       </div>
 
-      {/* FLOATING INFO BUTTON */}
-      <FloatingInfo onOpen={()=>setNavTab("info")}/>
-
       {/* BOTTOM NAV */}
       <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:"rgba(10,26,10,0.97)",borderTop:`1px solid rgba(255,255,255,0.1)`,backdropFilter:"blur(12px)",display:"flex",alignItems:"stretch",justifyContent:"space-around",height:"64px"}}>
         {[
@@ -2646,13 +2661,13 @@ export default function App() {
           {id:"posiciones", label:"Posiciones", icon:"M3 10h18M3 14h18M3 6h18M3 18h18"},
           {id:"muro", label:"Muro", icon:"M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"},
           {id:"ranking", label:"Ranking", icon:"M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"},
-          {id:"designados", label:"Designados", icon:"M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"},
+          {id:"info", label:"Info", icon:"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"},
         ].map(tab=>{
           const active = navTab===tab.id;
           const handleClick = () => {
             if(tab.id==="muro") { setNavTab("muro"); setMuroOpen(false); setRankModal(false); }
             else if(tab.id==="ranking") { setNavTab("ranking"); setMuroOpen(false); setRankModal(false); }
-            else if(tab.id==="designados") { setNavTab("designados"); setMuroOpen(false); setRankModal(false); }
+            else if(tab.id==="info") { setNavTab("info"); setMuroOpen(false); setRankModal(false); }
             else { setNavTab(tab.id); setMuroOpen(false); setRankModal(false); setRulesOpen(false); }
           };
           return (
