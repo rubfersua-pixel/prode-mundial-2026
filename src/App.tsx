@@ -430,7 +430,7 @@ const PAGE_SIZE = 3;
 
 // --- LOCK ---------------------------------------------------------------------
 const KICKOFF_UTC={1001:Date.UTC(2026,4,14,12,0),1002:Date.UTC(2026,4,14,13,0),1003:Date.UTC(2026,4,14,14,0),1004:Date.UTC(2026,4,14,15,0),1005:Date.UTC(2026,4,14,16,0),1006:Date.UTC(2026,4,14,17,0),1007:Date.UTC(2026,4,14,18,0),1008:Date.UTC(2026,4,14,19,0),1009:Date.UTC(2026,4,14,20,0),1010:Date.UTC(2026,4,14,21,0),1011:Date.UTC(2026,4,14,22,0),1012:Date.UTC(2026,4,14,23,0),1013:Date.UTC(2026,4,15,0,0),1014:Date.UTC(2026,4,15,1,0),1015:Date.UTC(2026,4,15,2,0),1016:Date.UTC(2026,4,15,12,0),1017:Date.UTC(2026,4,15,13,0),1018:Date.UTC(2026,4,15,14,0),1019:Date.UTC(2026,4,15,15,0),1020:Date.UTC(2026,4,15,16,0),1021:Date.UTC(2026,4,15,17,0),1022:Date.UTC(2026,4,15,18,0),1023:Date.UTC(2026,4,15,19,0),1024:Date.UTC(2026,4,15,20,0),1025:Date.UTC(2026,4,15,21,0),1026:Date.UTC(2026,4,15,22,0),1027:Date.UTC(2026,4,15,23,0),1028:Date.UTC(2026,4,16,0,0),1029:Date.UTC(2026,4,16,1,0),1030:Date.UTC(2026,4,16,2,0),1031:Date.UTC(2026,4,16,12,0),1032:Date.UTC(2026,4,16,13,0),1033:Date.UTC(2026,4,16,14,0),1034:Date.UTC(2026,4,16,15,0),1035:Date.UTC(2026,4,16,16,0),1036:Date.UTC(2026,4,16,17,0),1037:Date.UTC(2026,4,16,18,0),1038:Date.UTC(2026,4,16,19,0),1039:Date.UTC(2026,4,16,20,0),1040:Date.UTC(2026,4,16,21,0),1041:Date.UTC(2026,4,16,22,0),1042:Date.UTC(2026,4,16,23,0),1043:Date.UTC(2026,4,17,0,0),1044:Date.UTC(2026,4,17,1,0),1045:Date.UTC(2026,4,17,2,0),1046:Date.UTC(2026,4,17,12,0),1047:Date.UTC(2026,4,17,13,0),1048:Date.UTC(2026,4,17,14,0),1049:Date.UTC(2026,4,17,15,0),1050:Date.UTC(2026,4,17,16,0),1051:Date.UTC(2026,4,17,17,0),1052:Date.UTC(2026,4,17,18,0),1053:Date.UTC(2026,4,17,19,0),1054:Date.UTC(2026,4,17,20,0),1055:Date.UTC(2026,4,17,21,0),1056:Date.UTC(2026,4,17,22,0),1057:Date.UTC(2026,4,17,23,0),1058:Date.UTC(2026,4,18,0,0),1059:Date.UTC(2026,4,18,1,0),1060:Date.UTC(2026,4,18,2,0),1061:Date.UTC(2026,4,18,12,0),1062:Date.UTC(2026,4,18,13,0),1063:Date.UTC(2026,4,18,14,0),1064:Date.UTC(2026,4,18,15,0),1065:Date.UTC(2026,4,18,16,0),1066:Date.UTC(2026,4,18,17,0),1067:Date.UTC(2026,4,18,18,0),1068:Date.UTC(2026,4,18,19,0),1069:Date.UTC(2026,4,18,20,0),1070:Date.UTC(2026,4,18,21,0),1071:Date.UTC(2026,4,18,22,0),1072:Date.UTC(2026,4,18,23,0)};
-const KO_KICKOFF={"r32_1":Date.UTC(2026,4,19,0,0),"r32_2":Date.UTC(2026,4,19,1,0),"r32_3":Date.UTC(2026,4,19,2,0),"r32_4":Date.UTC(2026,4,19,12,0),"r32_5":Date.UTC(2026,4,19,13,0),"r32_6":Date.UTC(2026,4,19,14,0),"r32_7":Date.UTC(2026,4,19,15,0),"r32_8":Date.UTC(2026,4,19,16,0),"r32_9":Date.UTC(2026,4,19,17,0),"r32_10":Date.UTC(2026,4,19,18,0),"r32_11":Date.UTC(2026,4,19,19,0),"r32_12":Date.UTC(2026,4,19,20,0),"r32_13":Date.UTC(2026,4,19,21,0),"r32_14":Date.UTC(2026,4,19,22,0),"r32_15":Date.UTC(2026,4,19,23,0),"r32_16":Date.UTC(2026,4,20,0,0),"r16_1":Date.UTC(2026,4,20,1,0),"r16_2":Date.UTC(2026,4,20,2,0),"r16_3":Date.UTC(2026,4,20,12,0),"r16_4":Date.UTC(2026,4,20,13,0),"r16_5":Date.UTC(2026,4,20,14,0),"r16_6":Date.UTC(2026,4,20,15,0),"r16_7":Date.UTC(2026,4,20,16,0),"r16_8":Date.UTC(2026,4,20,17,0),"qf_1":Date.UTC(2026,4,20,18,0),"qf_2":Date.UTC(2026,4,20,19,0),"qf_3":Date.UTC(2026,4,20,20,0),"qf_4":Date.UTC(2026,4,20,21,0),"sf_1":Date.UTC(2026,4,20,22,0),"sf_2":Date.UTC(2026,4,20,23,0),"final_1":Date.UTC(2026,4,21,0,0)};
+const KO_KICKOFF={"r32_1":Date.UTC(2026,4,19,0,0),"r32_2":Date.UTC(2026,4,19,1,0),"r32_3":Date.UTC(2026,4,19,2,0),"r32_4":Date.UTC(2026,4,19,12,0),"r32_5":Date.UTC(2026,4,19,13,0),"r32_6":Date.UTC(2026,4,19,14,0),"r32_7":Date.UTC(2026,4,19,15,0),"r32_8":Date.UTC(2026,4,19,16,0),"r32_9":Date.UTC(2026,4,19,17,0),"r32_10":Date.UTC(2026,4,19,18,0),"r32_11":Date.UTC(2026,4,19,19,0),"r32_12":Date.UTC(2026,4,19,20,0),"r32_13":Date.UTC(2026,4,19,21,0),"r32_14":Date.UTC(2026,4,19,22,0),"r32_15":Date.UTC(2026,4,19,23,0),"r32_16":Date.UTC(2026,4,20,0,0),"r16_1":Date.UTC(2026,4,20,1,0),"r16_2":Date.UTC(2026,4,20,2,0),"r16_3":Date.UTC(2026,4,20,12,0),"r16_4":Date.UTC(2026,4,20,13,0),"r16_5":Date.UTC(2026,4,20,14,0),"r16_6":Date.UTC(2026,4,20,15,0),"r16_7":Date.UTC(2026,4,20,16,0),"r16_8":Date.UTC(2026,4,20,17,0),"qf_1":Date.UTC(2026,4,20,18,0),"qf_2":Date.UTC(2026,4,20,19,0),"qf_3":Date.UTC(2026,4,20,20,0),"qf_4":Date.UTC(2026,4,20,21,0),"sf_1":Date.UTC(2026,4,20,22,0),"sf_2":Date.UTC(2026,4,20,23,0),"third_1":Date.UTC(2026,4,21,0,0),"final_1":Date.UTC(2026,4,21,1,0)};
 const isLocked = id => { const k=KICKOFF_UTC[id]||KO_KICKOFF[id]; return k?Date.now()>=k-10*60*1000:false; };
 const SPECIALS_DEADLINE = Date.UTC(2026,4,15,21,50); // 10 min antes de México vs Corea (id 1026)
 const DESIGNATED_DEADLINE = Date.UTC(2026,4,14,11,50); // 10 min antes del 1er partido (id 1001)
@@ -1249,8 +1249,8 @@ function AdminPanel({onLogout}) {
             return KO_ROUNDS.map(round=>{
               const matches=round.id==="r32"?r32t:BRACKET[round.id].map(m=>({
                 id:m.id,
-                homeId:resolveKOTeam(m.home,koRes,r32t),
-                awayId:resolveKOTeam(m.away,koRes,r32t),
+                homeId:m.loser?resolveKOLoser(m.home,koRes,r32t):resolveKOTeam(m.home,koRes,r32t),
+                awayId:m.loser?resolveKOLoser(m.away,koRes,r32t):resolveKOTeam(m.away,koRes,r32t),
               }));
               return(
                 <div key={round.id} style={{marginBottom:"0.75rem"}}>
@@ -1368,6 +1368,7 @@ const BRACKET = {
     {id:"qf_3",home:"r16_5",away:"r16_6"},{id:"qf_4",home:"r16_7",away:"r16_8"},
   ],
   sf:[{id:"sf_1",home:"qf_1",away:"qf_2"},{id:"sf_2",home:"qf_3",away:"qf_4"}],
+  third:[{id:"third_1",home:"sf_1",away:"sf_2",loser:true}],
   final:[{id:"final_1",home:"sf_1",away:"sf_2"}],
 };
 
@@ -1379,6 +1380,7 @@ const KO_DATES = (() => {
     ...BRACKET.r16.map((m,i)=>({id:m.id,home:m.home,away:m.away,label:`Partido ${i+1}`,round:"r16",roundLabel:"8avos",icon:"🥊",color:"#38bdf8"})),
     ...BRACKET.qf.map((m,i)=>({id:m.id,home:m.home,away:m.away,label:`Partido ${i+1}`,round:"qf",roundLabel:"Cuartos",icon:"🔥",color:"#f59e0b"})),
     ...BRACKET.sf.map((m,i)=>({id:m.id,home:m.home,away:m.away,label:`Partido ${i+1}`,round:"sf",roundLabel:"Semis",icon:"💥",color:"#fb7185"})),
+    ...BRACKET.third.map((m,i)=>({id:m.id,home:m.home,away:m.away,label:"3° Puesto",round:"third",roundLabel:"3° Puesto",icon:"🥉",color:"#cd7f32",loser:true})),
     ...BRACKET.final.map((m,i)=>({id:m.id,home:m.home,away:m.away,label:"Final",round:"final",roundLabel:"Final",icon:"👑",color:"#fbbf24"})),
   ];
   allMatches.forEach(m=>{
@@ -1408,6 +1410,19 @@ function resolveKOTeam(matchId, adminResults, r32Teams) {
     if(m){
       const res=adminResults?.[matchId];
       if(res){const h=parseInt(res.home),a=parseInt(res.away);if(!isNaN(h)&&!isNaN(a)&&h!==a){return h>a?resolveKOTeam(m.home,adminResults,r32Teams):resolveKOTeam(m.away,adminResults,r32Teams);}}
+      return null;
+    }
+  }
+  return null;
+}
+
+// Resolve the LOSER of a match (for third place)
+function resolveKOLoser(matchId, adminResults, r32Teams) {
+  for(const matches of Object.values(BRACKET)){
+    const m=matches.find(x=>x.id===matchId);
+    if(m){
+      const res=adminResults?.[matchId];
+      if(res){const h=parseInt(res.home),a=parseInt(res.away);if(!isNaN(h)&&!isNaN(a)&&h!==a){return h>a?resolveKOTeam(m.away,adminResults,r32Teams):resolveKOTeam(m.home,adminResults,r32Teams);}}
       return null;
     }
   }
@@ -1445,7 +1460,7 @@ function KnockoutCard({matchId, home, away, homeLabel, awayLabel, fScores, onSco
   const res = !has?null:h>a?"home":a>h?"away":"draw";
   const homeT = home?T[home]:null;
   const awayT = away?T[away]:null;
-  const locked = false; // TODO: add kickoff times for knockout
+  const locked = isLocked(matchId);
   const canJoker = !locked&&(isJoker||jokersLeft>0);
 
   const resColor = res==="draw"?"rgba(96,165,250,0.12)":res==="home"?"rgba(52,211,153,0.1)":res==="away"?"rgba(251,113,133,0.1)":"transparent";
@@ -1550,6 +1565,7 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
     {id:"r16",label:"8avos",icon:"🥊",color:C.sky,count:8,dates:"4-8 Jul"},
     {id:"qf",label:"Cuartos",icon:"🔥",color:C.gold,count:4,dates:"9-10 Jul"},
     {id:"sf",label:"Semis",icon:"💥",color:C.rose,count:2,dates:"13-14 Jul"},
+    {id:"third",label:"3° Puesto",icon:"🥉",color:"#cd7f32",count:1,dates:"18 Jul"},
     {id:"final",label:"Final",icon:"👑",color:"#fbbf24",count:1,dates:"19 Jul"},
   ];
   const podiumPts=[10,6,3];
@@ -1618,7 +1634,7 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
           const adminResults = realRes?.knockoutResults||{};
           const r32t = R32_MATCHES.map(x=>({...x,homeId:resolveSlot(x.home,realRes,scores),awayId:resolveSlot(x.away,realRes,scores)}));
           const done = fecha.matches.filter(m=>{const s=fScores[m.id];return s&&!isNaN(parseInt(s.home))&&!isNaN(parseInt(s.away));}).length;
-          const roundColors = {"r32":"#a78bfa","r16":"#38bdf8","qf":"#f59e0b","sf":"#fb7185","final":"#fbbf24"};
+          const roundColors = {"r32":"#a78bfa","r16":"#38bdf8","qf":"#f59e0b","sf":"#fb7185","third":"#cd7f32","final":"#fbbf24"};
           return(
             <div key={fecha.date} style={{marginBottom:"0.4rem"}}>
               <button onClick={()=>setOpenF(p=>p===fecha.date?null:fecha.date)}
@@ -1636,8 +1652,8 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
               {isOpen&&(
                 <div style={{marginTop:"0.35rem",display:"flex",flexDirection:"column",gap:"0.35rem",paddingLeft:"0.25rem"}}>
                   {fecha.matches.map((m,mi)=>{
-                    const homeId = m.round==="r32"?(r32t.find(x=>x.id===m.id)?.homeId||null):resolveKOTeam(m.home,adminResults,r32t);
-                    const awayId = m.round==="r32"?(r32t.find(x=>x.id===m.id)?.awayId||null):resolveKOTeam(m.away,adminResults,r32t);
+                    const homeId = m.round==="r32"?(r32t.find(x=>x.id===m.id)?.homeId||null):m.loser?resolveKOLoser(m.home,adminResults,r32t):resolveKOTeam(m.home,adminResults,r32t);
+                    const awayId = m.round==="r32"?(r32t.find(x=>x.id===m.id)?.awayId||null):m.loser?resolveKOLoser(m.away,adminResults,r32t):resolveKOTeam(m.away,adminResults,r32t);
                     const homeLabel = m.round==="r32"?slotLabel(m.home):`G. P${mi+1}`;
                     const awayLabel = m.round==="r32"?slotLabel(m.away):`G. P${mi+2}`;
                     const hT=homeId?T[homeId]:null, aT=awayId?T[awayId]:null;
