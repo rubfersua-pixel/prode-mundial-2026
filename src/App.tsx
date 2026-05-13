@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // --- FONT ---------------------------------------------------------------------
 const fontLink = document.createElement("link");
@@ -432,6 +432,10 @@ const PAGE_SIZE = 3;
 const KICKOFF_UTC={1001:Date.UTC(2026,4,14,12,0),1002:Date.UTC(2026,4,14,13,0),1003:Date.UTC(2026,4,14,14,0),1004:Date.UTC(2026,4,14,15,0),1005:Date.UTC(2026,4,14,16,0),1006:Date.UTC(2026,4,14,17,0),1007:Date.UTC(2026,4,14,18,0),1008:Date.UTC(2026,4,14,19,0),1009:Date.UTC(2026,4,14,20,0),1010:Date.UTC(2026,4,14,21,0),1011:Date.UTC(2026,4,14,22,0),1012:Date.UTC(2026,4,14,23,0),1013:Date.UTC(2026,4,15,0,0),1014:Date.UTC(2026,4,15,1,0),1015:Date.UTC(2026,4,15,2,0),1016:Date.UTC(2026,4,15,12,0),1017:Date.UTC(2026,4,15,13,0),1018:Date.UTC(2026,4,15,14,0),1019:Date.UTC(2026,4,15,15,0),1020:Date.UTC(2026,4,15,16,0),1021:Date.UTC(2026,4,15,17,0),1022:Date.UTC(2026,4,15,18,0),1023:Date.UTC(2026,4,15,19,0),1024:Date.UTC(2026,4,15,20,0),1025:Date.UTC(2026,4,15,21,0),1026:Date.UTC(2026,4,15,22,0),1027:Date.UTC(2026,4,15,23,0),1028:Date.UTC(2026,4,16,0,0),1029:Date.UTC(2026,4,16,1,0),1030:Date.UTC(2026,4,16,2,0),1031:Date.UTC(2026,4,16,12,0),1032:Date.UTC(2026,4,16,13,0),1033:Date.UTC(2026,4,16,14,0),1034:Date.UTC(2026,4,16,15,0),1035:Date.UTC(2026,4,16,16,0),1036:Date.UTC(2026,4,16,17,0),1037:Date.UTC(2026,4,16,18,0),1038:Date.UTC(2026,4,16,19,0),1039:Date.UTC(2026,4,16,20,0),1040:Date.UTC(2026,4,16,21,0),1041:Date.UTC(2026,4,16,22,0),1042:Date.UTC(2026,4,16,23,0),1043:Date.UTC(2026,4,17,0,0),1044:Date.UTC(2026,4,17,1,0),1045:Date.UTC(2026,4,17,2,0),1046:Date.UTC(2026,4,17,12,0),1047:Date.UTC(2026,4,17,13,0),1048:Date.UTC(2026,4,17,14,0),1049:Date.UTC(2026,4,17,15,0),1050:Date.UTC(2026,4,17,16,0),1051:Date.UTC(2026,4,17,17,0),1052:Date.UTC(2026,4,17,18,0),1053:Date.UTC(2026,4,17,19,0),1054:Date.UTC(2026,4,17,20,0),1055:Date.UTC(2026,4,17,21,0),1056:Date.UTC(2026,4,17,22,0),1057:Date.UTC(2026,4,17,23,0),1058:Date.UTC(2026,4,18,0,0),1059:Date.UTC(2026,4,18,1,0),1060:Date.UTC(2026,4,18,2,0),1061:Date.UTC(2026,4,18,12,0),1062:Date.UTC(2026,4,18,13,0),1063:Date.UTC(2026,4,18,14,0),1064:Date.UTC(2026,4,18,15,0),1065:Date.UTC(2026,4,18,16,0),1066:Date.UTC(2026,4,18,17,0),1067:Date.UTC(2026,4,18,18,0),1068:Date.UTC(2026,4,18,19,0),1069:Date.UTC(2026,4,18,20,0),1070:Date.UTC(2026,4,18,21,0),1071:Date.UTC(2026,4,18,22,0),1072:Date.UTC(2026,4,18,23,0)};
 const KO_KICKOFF={"r32_1":Date.UTC(2026,4,19,0,0),"r32_2":Date.UTC(2026,4,19,1,0),"r32_3":Date.UTC(2026,4,19,2,0),"r32_4":Date.UTC(2026,4,19,12,0),"r32_5":Date.UTC(2026,4,19,13,0),"r32_6":Date.UTC(2026,4,19,14,0),"r32_7":Date.UTC(2026,4,19,15,0),"r32_8":Date.UTC(2026,4,19,16,0),"r32_9":Date.UTC(2026,4,19,17,0),"r32_10":Date.UTC(2026,4,19,18,0),"r32_11":Date.UTC(2026,4,19,19,0),"r32_12":Date.UTC(2026,4,19,20,0),"r32_13":Date.UTC(2026,4,19,21,0),"r32_14":Date.UTC(2026,4,19,22,0),"r32_15":Date.UTC(2026,4,19,23,0),"r32_16":Date.UTC(2026,4,20,0,0),"r16_1":Date.UTC(2026,4,20,1,0),"r16_2":Date.UTC(2026,4,20,2,0),"r16_3":Date.UTC(2026,4,20,12,0),"r16_4":Date.UTC(2026,4,20,13,0),"r16_5":Date.UTC(2026,4,20,14,0),"r16_6":Date.UTC(2026,4,20,15,0),"r16_7":Date.UTC(2026,4,20,16,0),"r16_8":Date.UTC(2026,4,20,17,0),"qf_1":Date.UTC(2026,4,20,18,0),"qf_2":Date.UTC(2026,4,20,19,0),"qf_3":Date.UTC(2026,4,20,20,0),"qf_4":Date.UTC(2026,4,20,21,0),"sf_1":Date.UTC(2026,4,20,22,0),"sf_2":Date.UTC(2026,4,20,23,0),"final_1":Date.UTC(2026,4,21,0,0)};
 const isLocked = id => { const k=KICKOFF_UTC[id]||KO_KICKOFF[id]; return k?Date.now()>=k-10*60*1000:false; };
+const SPECIALS_DEADLINE = Date.UTC(2026,4,15,21,50); // 10 min antes de México vs Corea (id 1026)
+const DESIGNATED_DEADLINE = Date.UTC(2026,4,14,11,50); // 10 min antes del 1er partido (id 1001)
+const isDesignatedLocked = () => Date.now() >= DESIGNATED_DEADLINE;
+const isSpecialsLocked = () => Date.now() >= SPECIALS_DEADLINE;
 
 // --- SCORING ------------------------------------------------------------------
 const PTS_CAMPEON=10,PTS_SUBCAMPEON=7,PTS_GOLEADOR=10,PTS_CLASIFICADO=1,PTS_TERCERO=2;
@@ -673,9 +677,9 @@ function ScoreInput({value,onChange,disabled}) {
     <input type="number" min="0" max="99" value={value} placeholder="–"
       onChange={e=>onChange(e.target.value)} disabled={disabled}
       style={{width:"3rem",height:"3rem",textAlign:"center",fontSize:"1.25rem",fontWeight:900,
-        background:disabled?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.07)",
-        border:`2px solid ${disabled?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.15)"}`,
-        borderRadius:"0.75rem",color:disabled?"rgba(255,255,255,0.25)":"white",
+        background:disabled?"rgba(251,113,133,0.12)":"rgba(255,255,255,0.07)",
+        border:`2px solid ${disabled?"rgba(251,113,133,0.35)":"rgba(255,255,255,0.15)"}`,
+        borderRadius:"0.75rem",color:disabled?"rgba(251,113,133,0.6)":"white",
         outline:"none",cursor:disabled?"not-allowed":"text",fontFamily:"inherit",
         WebkitAppearance:"none",MozAppearance:"textfield"}}/>
   );
@@ -900,16 +904,15 @@ function TeamSelect({value, onChange, placeholder="— Elegir selección —"}) 
     </div>
   );
 }
-function SpecialPicks({sp,onChange,isOpen,onToggle}) {
+function SpecialPicks({sp,onChange,isOpen,onToggle,locked=false,designatedLocked=false}) {
   const grupos=sp.clasificados?.grupos||{};
   const total=Object.values(grupos).reduce((s,a)=>s+(a?.length||0),0);
   const filled=[sp.campeon,sp.subcampeon,sp.goleador,sp.goleadorDesignado,sp.arqueroDesignado].filter(Boolean).length + (total===32?1:0);
 
   const toggleGrupo=(gid,tid)=>{
+    if(locked) return;
     const cur=grupos[gid]||[];
-    // Count how many groups already have a 3rd pick
     const thirdsCount = Object.values(grupos).filter(a=>a?.length===3).length;
-    // Deselect always allowed
     if(cur.includes(tid)){
       const next=cur.filter(x=>x!==tid);
       onChange("clasificados",{...sp.clasificados,grupos:{...grupos,[gid]:next}});
@@ -925,7 +928,7 @@ function SpecialPicks({sp,onChange,isOpen,onToggle}) {
   const teamField=(key,label,icon)=>(
     <div style={{marginBottom:"1rem"}}>
       <label style={S.label}>{icon} {label}</label>
-      <TeamSelect value={sp[key]||""} onChange={v=>onChange(key,v)}/>
+      <TeamSelect value={sp[key]||""} onChange={v=>{ if(!locked) onChange(key,v); }} disabled={locked}/>
       {sp[key]&&T[sp[key]]&&<div style={{marginTop:"0.4rem",display:"flex",alignItems:"center",gap:"0.5rem",padding:"0.4rem 0.6rem",background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:"0.6rem"}}>
         <FlagImg team={T[sp[key]]} size={20}/>
         <span style={{fontSize:"0.75rem",fontWeight:900,color:"white"}}>{T[sp[key]].short}</span>
@@ -934,24 +937,32 @@ function SpecialPicks({sp,onChange,isOpen,onToggle}) {
     </div>
   );
 
-  const playerField=(key,label,icon)=>(
+  const playerField=(key,label,icon,extraLocked=false)=>{
+    const isFieldLocked = locked || extraLocked;
+    return (
     <div style={{marginBottom:"1rem"}}>
-      <label style={S.label}>{icon} {label}</label>
-      <PlayerSelect value={sp[key]||""} onChange={v=>onChange(key,v)}/>
+      <label style={S.label}>{icon} {label}{extraLocked&&!locked&&<span style={{marginLeft:"0.4rem",fontSize:"0.55rem",fontWeight:900,background:"rgba(251,113,133,0.15)",color:"#fb7185",padding:"0.15rem 0.35rem",borderRadius:"0.3rem"}}>🔒 CERRADO</span>}</label>
+      <PlayerSelect value={sp[key]||""} onChange={v=>{ if(!isFieldLocked) onChange(key,v); }} disabled={isFieldLocked}/>
     </div>
-  );
+  );};
 
   return (
     <Accordion open={isOpen} onToggle={onToggle} badge="⭐" badgeColor={C.gold}
       title="Pronósticos Especiales" sub="Campeón · Goleador · Arquero · Clasificados"
-      right={`${filled}/6`}>
+      right={locked ? <span style={{fontSize:"0.6rem",fontWeight:900,background:"rgba(251,113,133,0.15)",color:"#fb7185",padding:"0.2rem 0.5rem",borderRadius:"0.3rem"}}>🔒 CERRADO</span> : `${filled}/6`}>
       <div style={{...S.card,padding:"1rem"}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"0rem 1.5rem"}}>
+        {locked && (
+          <div style={{marginBottom:"1rem",padding:"0.5rem 0.75rem",background:"rgba(251,113,133,0.08)",border:"1px solid rgba(251,113,133,0.25)",borderRadius:"0.6rem",display:"flex",alignItems:"center",gap:"0.5rem"}}>
+            <span style={{fontSize:"1rem"}}>🔒</span>
+            <span style={{fontSize:"0.7rem",fontWeight:700,color:"#fb7185"}}>Pronósticos especiales cerrados — México vs Corea ya comenzó</span>
+          </div>
+        )}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"0rem 1.5rem",opacity:locked?0.6:1,pointerEvents:locked?"none":"auto"}}>
           {teamField("campeon","Campeón","🏆")}
           {teamField("subcampeon","Subcampeón","🥈")}
           {playerField("goleador","Goleador (+10pts)","👟")}
-          {playerField("goleadorDesignado","Goleador Designado (+1pt/gol)","⭐")}
-          {playerField("arqueroDesignado","Arquero Designado (+1pt/arco en 0)","🧤")}
+          {playerField("goleadorDesignado","Goleador Designado (+1pt/gol)","⭐",designatedLocked)}
+          {playerField("arqueroDesignado","Arquero Designado (+1pt/arco en 0)","🧤",designatedLocked)}
         </div>
 
         {/* Clasificados */}
@@ -966,7 +977,7 @@ function SpecialPicks({sp,onChange,isOpen,onToggle}) {
               <span style={{fontSize:"0.7rem",fontWeight:700,padding:"0.2rem 0.5rem",borderRadius:"99px",background:"rgba(251,191,36,0.1)",color:C.gold}}>
                 {Object.values(grupos).filter(a=>a?.length===3).length}/8 terceros
               </span>
-              {total>0&&<button onClick={()=>onChange("clasificados",{grupos:{}})} style={{...S.btn,padding:"0.2rem 0.5rem",fontSize:"0.6rem",background:"rgba(251,113,133,0.15)",color:C.rose,border:"none"}}>Limpiar</button>}
+              {total>0&&!locked&&<button onClick={()=>onChange("clasificados",{grupos:{}})} style={{...S.btn,padding:"0.2rem 0.5rem",fontSize:"0.6rem",background:"rgba(251,113,133,0.15)",color:C.rose,border:"none"}}>Limpiar</button>}
             </div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:"0.5rem"}}>
@@ -2143,6 +2154,164 @@ function Login({onLogin}) {
   );
 }
 
+
+// --- FLOATING INFO BUTTON -----------------------------------------------------
+function FloatingInfo({onOpen}) {
+  const [pos,setPos] = useState({x:null,y:null});
+  const [dragging,setDragging] = useState(false);
+  const dragRef = useRef(null);
+  const startRef = useRef(null);
+
+  const handleStart = (clientX,clientY) => {
+    startRef.current = {clientX,clientY,startX:pos.x??20,startY:pos.y??200};
+    setDragging(false);
+    dragRef.current = {clientX,clientY};
+  };
+  const handleMove = (clientX,clientY) => {
+    if(!startRef.current) return;
+    const dx = clientX - startRef.current.clientX;
+    const dy = clientY - startRef.current.clientY;
+    if(Math.abs(dx)>5||Math.abs(dy)>5) setDragging(true);
+    const newX = Math.max(0, Math.min(window.innerWidth-52, startRef.current.startX + dx));
+    const newY = Math.max(0, Math.min(window.innerHeight-120, startRef.current.startY + dy));
+    setPos({x:newX,y:newY});
+  };
+  const handleEnd = () => {
+    if(!dragging) onOpen();
+    startRef.current = null;
+  };
+
+  const x = pos.x ?? 20;
+  const y = pos.y ?? (window.innerHeight ? window.innerHeight*0.35 : 250);
+
+  return (
+    <div
+      onMouseDown={e=>{e.preventDefault();handleStart(e.clientX,e.clientY);
+        const mm=ev=>handleMove(ev.clientX,ev.clientY);
+        const mu=()=>{handleEnd();window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',mu);};
+        window.addEventListener('mousemove',mm);window.addEventListener('mouseup',mu);}}
+      onTouchStart={e=>{const t=e.touches[0];handleStart(t.clientX,t.clientY);
+        const tm=ev=>{ev.preventDefault();const tt=ev.touches[0];handleMove(tt.clientX,tt.clientY);};
+        const te=()=>{handleEnd();window.removeEventListener('touchmove',tm);window.removeEventListener('touchend',te);};
+        window.addEventListener('touchmove',tm,{passive:false});window.addEventListener('touchend',te);}}
+      style={{position:"fixed",left:x,top:y,zIndex:99,cursor:dragging?"grabbing":"grab",userSelect:"none",touchAction:"none"}}>
+      <div style={{width:"44px",height:"44px",borderRadius:"50%",background:"rgba(10,26,10,0.92)",border:"1px solid rgba(255,255,255,0.18)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 12px rgba(0,0,0,0.4)"}}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// --- DESIGNADOS VIEW ----------------------------------------------------------
+function DesignadosView({currentUser}) {
+  const [data,setData] = useState([]);
+  const [loading,setLoading] = useState(true);
+  const desigLocked = isDesignatedLocked();
+  const allLocked = isSpecialsLocked();
+
+  useEffect(()=>{
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [users, spData] = await Promise.all([
+          sGetApprovedUsers(),
+          sbFetch("specials?select=username,data")
+        ]);
+        const spMap = {};
+        (spData||[]).forEach(r=>{ spMap[r.username]=r.data||{}; });
+        const rows = users.map(u=>({
+          username: u.username,
+          fullName: u.full_name||u.username,
+          goleadorDesignado: spMap[u.username]?.goleadorDesignado||"",
+          arqueroDesignado: spMap[u.username]?.arqueroDesignado||"",
+          campeon: spMap[u.username]?.campeon||"",
+          subcampeon: spMap[u.username]?.subcampeon||"",
+          goleador: spMap[u.username]?.goleador||"",
+        }));
+        setData(rows);
+      } catch(_){}
+      setLoading(false);
+    };
+    load();
+  },[]);
+
+  const playerName = (id) => {
+    if(!id) return "—";
+    // PLAYERS is {teamId:[names...]}, value stored is the name string directly
+    return id;
+  };
+
+  if(loading) return (
+    <div style={{textAlign:"center",padding:"3rem 0",color:"rgba(255,255,255,0.3)",fontSize:"0.8rem"}}>Cargando...</div>
+  );
+
+  return (
+    <div>
+      <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"1.25rem"}}>
+        <h2 style={{margin:0,fontSize:"1rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(255,255,255,0.8)"}}>Designados</h2>
+        <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(251,191,36,0.3),transparent)"}}/>
+      </div>
+
+      {/* Goleador y Arquero Designado */}
+      <div style={{marginBottom:"1.25rem"}}>
+        <div style={{fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.4)",marginBottom:"0.6rem"}}>
+          {desigLocked ? "👟 Goleador & 🧤 Arquero Designado" : "🔒 Se revelan al inicio del torneo · 14 mayo 07:50 BOT"}
+        </div>
+        {!desigLocked ? (
+          <div style={{padding:"1.25rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"0.75rem",textAlign:"center"}}>
+            <div style={{fontSize:"1.5rem",marginBottom:"0.5rem"}}>🔒</div>
+            <div style={{fontSize:"0.75rem",fontWeight:700,color:"rgba(255,255,255,0.5)"}}>Los designados se revelan 10 minutos antes del primer partido</div>
+            <div style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.25)",marginTop:"0.3rem"}}>14 de mayo · 07:50 BOT</div>
+          </div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
+            {data.map(u=>(
+              <div key={u.username} style={{display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.5rem 0.75rem",background:u.username===currentUser?"rgba(251,191,36,0.06)":"rgba(255,255,255,0.03)",border:`1px solid ${u.username===currentUser?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.07)"}`,borderRadius:"0.6rem"}}>
+                <div style={{width:"1.6rem",height:"1.6rem",borderRadius:"0.35rem",background:"rgba(251,191,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.7rem",flexShrink:0}}>{(u.fullName)[0].toUpperCase()}</div>
+                <div style={{fontSize:"0.7rem",fontWeight:700,color:"rgba(255,255,255,0.7)",minWidth:"80px",flexShrink:0}}>{u.fullName}</div>
+                <div style={{flex:1,display:"flex",gap:"0.5rem",flexWrap:"wrap"}}>
+                  <span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.5)"}}>👟 <span style={{color:"white",fontWeight:700}}>{playerName(u.goleadorDesignado)||"—"}</span></span>
+                  <span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.5)"}}>🧤 <span style={{color:"white",fontWeight:700}}>{playerName(u.arqueroDesignado)||"—"}</span></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Campeón, Subcampeón, Goleador */}
+      <div>
+        <div style={{fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.4)",marginBottom:"0.6rem"}}>
+          {allLocked ? "🏆 Campeón · Subcampeón · Goleador" : "🔒 Se revelan antes del 2° partido de México · 15 mayo 17:50 BOT"}
+        </div>
+        {!allLocked ? (
+          <div style={{padding:"1.25rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"0.75rem",textAlign:"center"}}>
+            <div style={{fontSize:"1.5rem",marginBottom:"0.5rem"}}>🔒</div>
+            <div style={{fontSize:"0.75rem",fontWeight:700,color:"rgba(255,255,255,0.5)"}}>Campeón, Subcampeón y Goleador se revelan antes del 2° partido de México</div>
+            <div style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.25)",marginTop:"0.3rem"}}>15 de mayo · 17:50 BOT</div>
+          </div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
+            {data.map(u=>(
+              <div key={u.username} style={{display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.5rem 0.75rem",background:u.username===currentUser?"rgba(251,191,36,0.06)":"rgba(255,255,255,0.03)",border:`1px solid ${u.username===currentUser?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.07)"}`,borderRadius:"0.6rem"}}>
+                <div style={{width:"1.6rem",height:"1.6rem",borderRadius:"0.35rem",background:"rgba(251,191,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontWeight:900,fontSize:"0.7rem",flexShrink:0}}>{(u.fullName)[0].toUpperCase()}</div>
+                <div style={{fontSize:"0.7rem",fontWeight:700,color:"rgba(255,255,255,0.7)",minWidth:"80px",flexShrink:0}}>{u.fullName}</div>
+                <div style={{flex:1,display:"flex",gap:"0.5rem",flexWrap:"wrap"}}>
+                  {u.campeon&&T[u.campeon]&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.5)"}}>🏆 <span style={{color:"white",fontWeight:700}}>{T[u.campeon].short}</span></span>}
+                  {u.subcampeon&&T[u.subcampeon]&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.5)"}}>🥈 <span style={{color:"white",fontWeight:700}}>{T[u.subcampeon].short}</span></span>}
+                  {u.goleador&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.5)"}}>👟 <span style={{color:"white",fontWeight:700}}>{playerName(u.goleador)}</span></span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --- APP ----------------------------------------------------------------------
 export default function App() {
   const [ready,setReady]   = useState(false);
@@ -2333,6 +2502,7 @@ export default function App() {
   const showEspeciales = navTab==="especiales";
   const showPosiciones = navTab==="posiciones";
   const showPronosticos = navTab==="pronosticos";
+  const showDesignados = navTab==="designados";
 
   return (
     <div style={{height:"100vh",fontFamily:FONT,position:"relative",color:"white",WebkitFontSmoothing:"antialiased",MozOsxFontSmoothing:"grayscale",display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -2411,7 +2581,7 @@ export default function App() {
             <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"1rem"}}>
               <h2 style={{margin:0,fontSize:"1rem",fontWeight:900,textTransform:"uppercase",color:C.gold}}>Pronósticos Especiales</h2>
             </div>
-            <SpecialPicks sp={sp} onChange={(k,v)=>setSp(p=>({...p,[k]:v}))} isOpen={true} onToggle={()=>{}}/>
+            <SpecialPicks sp={sp} onChange={(k,v)=>setSp(p=>({...p,[k]:v}))} isOpen={true} onToggle={()=>{}} locked={isSpecialsLocked()} designatedLocked={isDesignatedLocked()}/>
           </div>
         )}
 
@@ -2449,6 +2619,13 @@ export default function App() {
           </div>
         )}
 
+        {/* Designados */}
+        {showDesignados && (
+          <div style={{paddingTop:"0.85rem"}}>
+            <DesignadosView currentUser={user}/>
+          </div>
+        )}
+
         {/* FASES FINALES */}
         {view==="finales" && showPronosticos && (
           <FasesFinales fScores={fScores} setFScores={setFScores} fJokers={fJokers} setFJokers={setFJokers} scores={scores} realRes={realRes} subRound={subRound} setSubRound={setSubRound} openF={openF} setOpenF={setOpenF}/>
@@ -2458,6 +2635,9 @@ export default function App() {
 
       </div>
 
+      {/* FLOATING INFO BUTTON */}
+      <FloatingInfo onOpen={()=>setNavTab("info")}/>
+
       {/* BOTTOM NAV */}
       <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:"rgba(10,26,10,0.97)",borderTop:`1px solid rgba(255,255,255,0.1)`,backdropFilter:"blur(12px)",display:"flex",alignItems:"stretch",justifyContent:"space-around",height:"64px"}}>
         {[
@@ -2466,13 +2646,13 @@ export default function App() {
           {id:"posiciones", label:"Posiciones", icon:"M3 10h18M3 14h18M3 6h18M3 18h18"},
           {id:"muro", label:"Muro", icon:"M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"},
           {id:"ranking", label:"Ranking", icon:"M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"},
-          {id:"info", label:"Info", icon:"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"},
+          {id:"designados", label:"Designados", icon:"M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"},
         ].map(tab=>{
           const active = navTab===tab.id;
           const handleClick = () => {
             if(tab.id==="muro") { setNavTab("muro"); setMuroOpen(false); setRankModal(false); }
             else if(tab.id==="ranking") { setNavTab("ranking"); setMuroOpen(false); setRankModal(false); }
-            else if(tab.id==="info") { setNavTab("info"); setMuroOpen(false); setRankModal(false); }
+            else if(tab.id==="designados") { setNavTab("designados"); setMuroOpen(false); setRankModal(false); }
             else { setNavTab(tab.id); setMuroOpen(false); setRankModal(false); setRulesOpen(false); }
           };
           return (
