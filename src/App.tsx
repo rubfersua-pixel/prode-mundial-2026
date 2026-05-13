@@ -465,10 +465,20 @@ function calcPoints(sc,sp,rr,jk=[]) {
     if(sp?.subcampeon&&rr.subcampeon&&sp.subcampeon===rr.subcampeon) especiales+=PTS_SUBCAMPEON;
     const sg=String(sp?.goleador||"").trim().toLowerCase(),rg=String(rr.goleador||"").trim().toLowerCase();
     if(sg&&rg&&sg===rg) especiales+=PTS_GOLEADOR;
-    const sgd=String(sp?.goleadorDesignado||"").trim().toLowerCase(),rgd=rr.goleadorDesignado||{};
-    if(sgd&&String(rgd.name||"").trim().toLowerCase()===sgd) especiales+=parseInt(rgd.goals||0)||0;
-    const saq=String(sp?.arqueroDesignado||"").trim().toLowerCase(),raq=rr.arqueroDesignado||{};
-    if(saq&&String(raq.name||"").trim().toLowerCase()===saq) especiales+=parseInt(raq.cleanSheets||0)||0;
+    // Goleador designado: nuevo formato multi-jugador
+    const sgd=String(sp?.goleadorDesignado||"").trim().toLowerCase();
+    if(sgd){
+      const gdMap=rr.goleadoresDesignados||{};
+      const gdGoals=Object.entries(gdMap).find(([k])=>k.trim().toLowerCase()===sgd)?.[1]||0;
+      especiales+=parseInt(gdGoals)||0;
+    }
+    // Arquero designado: nuevo formato multi-jugador
+    const saq=String(sp?.arqueroDesignado||"").trim().toLowerCase();
+    if(saq){
+      const aqMap=rr.arquerosDesignados||{};
+      const aqCS=Object.entries(aqMap).find(([k])=>k.trim().toLowerCase()===saq)?.[1]||0;
+      especiales+=parseInt(aqCS)||0;
+    }
     const uG=sp?.clasificados?.grupos||{},rG=rr.clasificados?.grupos||{};
     Object.keys(GROUPS).forEach(gid=>{
       const uArr=uG[gid]||[],rArr=rG[gid]||[];
@@ -1091,9 +1101,109 @@ function PendingUsers() {
 }
 
 // --- ADMIN PANEL --------------------------------------------------------------
+
+// --- DESIGNADOS ADMIN SECTION -------------------------------------------------
+function DesignadosAdminSection({rsp, setRsp}) {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(()=>{
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [users, spData] = await Promise.all([
+          sGetApprovedUsers(),
+          sbFetch("specials?select=username,data")
+        ]);
+        const spMap = {};
+        (spData||[]).forEach(r=>{ spMap[r.username]=r.data||{}; });
+        const rows = users.map(u=>({
+          username: u.username,
+          fullName: u.full_name||u.username,
+          goleadorDesignado: spMap[u.username]?.goleadorDesignado||"",
+          arqueroDesignado: spMap[u.username]?.arqueroDesignado||"",
+        }));
+        setData(rows);
+      } catch(_){}
+      setLoading(false);
+    };
+    load();
+  },[]);
+
+  // Get unique designated players
+  const goleadores = [...new Set(data.map(u=>u.goleadorDesignado).filter(Boolean))];
+  const arqueros   = [...new Set(data.map(u=>u.arqueroDesignado).filter(Boolean))];
+
+  const getUsersFor = (list, key, player) =>
+    list.filter(u=>u[key]===player).map(u=>u.fullName).join(", ");
+
+  if(loading) return <div style={{fontSize:"0.7rem",color:"rgba(255,255,255,0.3)",padding:"0.5rem 0"}}>Cargando designados...</div>;
+
+  if(!isDesignatedLocked()) return (
+    <div style={{marginTop:"0.75rem",padding:"0.5rem 0.75rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"0.6rem"}}>
+      <span style={{fontSize:"0.7rem",color:"rgba(255,255,255,0.35)"}}>🔒 Los designados se revelan el 14 mayo a las 07:50 BOT</span>
+    </div>
+  );
+
+  return (
+    <div style={{marginTop:"0.75rem",borderTop:`1px solid rgba(255,255,255,0.08)`,paddingTop:"0.75rem"}}>
+
+      {/* Goleadores Designados */}
+      {goleadores.length > 0 && (
+        <div style={{marginBottom:"0.75rem"}}>
+          <div style={{fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",color:"#fb7185",marginBottom:"0.4rem"}}>👟 Goles — Goleadores Designados</div>
+          <div style={{display:"flex",flexDirection:"column",gap:"0.35rem"}}>
+            {goleadores.map(player=>(
+              <div key={player} style={{display:"flex",alignItems:"center",gap:"0.5rem",padding:"0.4rem 0.6rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"0.5rem"}}>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:"0.72rem",fontWeight:700,color:"white"}}>{player}</div>
+                  <div style={{fontSize:"0.55rem",color:"rgba(255,255,255,0.35)",marginTop:"0.1rem"}}>{getUsersFor(data,"goleadorDesignado",player)}</div>
+                </div>
+                <input type="number" min="0" max="99"
+                  value={rsp.goleadoresDesignados?.[player]||""}
+                  onChange={e=>setRsp(p=>({...p,goleadoresDesignados:{...p.goleadoresDesignados,[player]:e.target.value}}))}
+                  placeholder="0"
+                  style={{width:"3rem",height:"2rem",textAlign:"center",fontSize:"0.85rem",fontWeight:900,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:"0.4rem",color:"white",outline:"none",fontFamily:FONT,WebkitAppearance:"none",MozAppearance:"textfield"}}/>
+                <span style={{fontSize:"0.6rem",color:"rgba(255,255,255,0.3)"}}>goles</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Arqueros Designados */}
+      {arqueros.length > 0 && (
+        <div>
+          <div style={{fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",color:"#38bdf8",marginBottom:"0.4rem"}}>🧤 Arcos en 0 — Arqueros Designados</div>
+          <div style={{display:"flex",flexDirection:"column",gap:"0.35rem"}}>
+            {arqueros.map(player=>(
+              <div key={player} style={{display:"flex",alignItems:"center",gap:"0.5rem",padding:"0.4rem 0.6rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"0.5rem"}}>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:"0.72rem",fontWeight:700,color:"white"}}>{player}</div>
+                  <div style={{fontSize:"0.55rem",color:"rgba(255,255,255,0.35)",marginTop:"0.1rem"}}>{getUsersFor(data,"arqueroDesignado",player)}</div>
+                </div>
+                <input type="number" min="0" max="99"
+                  value={rsp.arquerosDesignados?.[player]||""}
+                  onChange={e=>setRsp(p=>({...p,arquerosDesignados:{...p.arquerosDesignados,[player]:e.target.value}}))}
+                  placeholder="0"
+                  style={{width:"3rem",height:"2rem",textAlign:"center",fontSize:"0.85rem",fontWeight:900,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:"0.4rem",color:"white",outline:"none",fontFamily:FONT,WebkitAppearance:"none",MozAppearance:"textfield"}}/>
+                <span style={{fontSize:"0.6rem",color:"rgba(255,255,255,0.3)"}}>arcos en 0</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {goleadores.length===0 && arqueros.length===0 && (
+        <div style={{fontSize:"0.7rem",color:"rgba(255,255,255,0.3)"}}>Ningún usuario ha seleccionado designados aún.</div>
+      )}
+    </div>
+  );
+}
+
 function AdminPanel({onLogout}) {
   const [res,setRes]=useState(emptyScores);
-  const [rsp,setRsp]=useState({campeon:"",subcampeon:"",goleador:"",goleadorDesignado:{name:"",goals:""},arqueroDesignado:{name:"",cleanSheets:""},clasificados:{grupos:{}}});
+  const [rsp,setRsp]=useState({campeon:"",subcampeon:"",goleador:"",goleadoresDesignados:{},arquerosDesignados:{},clasificados:{grupos:{}}});
   const [koRes,setKoRes]=useState({});
   const [openF,setOpenF]=useState(null);
   const [vis,setVis]=useState(PAGE_SIZE);
@@ -1150,7 +1260,7 @@ function AdminPanel({onLogout}) {
               if(!window.confirm("¿Borrar pronósticos de usuarios y resultados del admin? Los usuarios registrados se mantienen.")) return;
               await sDeleteGameData();
               setRes(emptyScores());
-              setRsp({campeon:"",subcampeon:"",goleador:"",goleadorDesignado:{name:"",goals:""},arqueroDesignado:{name:"",cleanSheets:""},clasificados:{grupos:{}}});
+              setRsp({campeon:"",subcampeon:"",goleador:"",goleadoresDesignados:{},arquerosDesignados:{},clasificados:{grupos:{}}});
               setKoRes({});
               alert("Reset completado. Pronósticos y resultados borrados. La app se va a recargar.");
               window.location.reload();
@@ -1187,17 +1297,9 @@ function AdminPanel({onLogout}) {
               <label style={S.label}>👟 Goleador Real</label>
               <PlayerSelect value={rsp.goleador||""} onChange={v=>setRsp(p=>({...p,goleador:v}))}/>
             </div>
-            <div>
-              <label style={S.label}>⭐ Goleador Designado Real</label>
-              <PlayerSelect value={rsp.goleadorDesignado?.name||""} onChange={v=>setRsp(p=>({...p,goleadorDesignado:{...p.goleadorDesignado,name:v}}))}/>
-              <input type="number" value={rsp.goleadorDesignado?.goals||""} onChange={e=>setRsp(p=>({...p,goleadorDesignado:{...p.goleadorDesignado,goals:e.target.value}}))} placeholder="Nº goles totales" style={{...S.input,marginTop:"0.4rem"}}/>
-            </div>
-            <div>
-              <label style={S.label}>🧤 Arquero Designado Real</label>
-              <PlayerSelect value={rsp.arqueroDesignado?.name||""} onChange={v=>setRsp(p=>({...p,arqueroDesignado:{...p.arqueroDesignado,name:v}}))}/>
-              <input type="number" value={rsp.arqueroDesignado?.cleanSheets||""} onChange={e=>setRsp(p=>({...p,arqueroDesignado:{...p.arqueroDesignado,cleanSheets:e.target.value}}))} placeholder="Nº arcos en 0" style={{...S.input,marginTop:"0.4rem"}}/>
-            </div>
-          </div>
+          </div>{/* end grid */}
+          {/* Goleadores y Arqueros Designados — lista dinámica desde usuarios */}
+          <DesignadosAdminSection rsp={rsp} setRsp={setRsp}/>
           {/* Admin clasificados */}
           <div style={{borderTop:`1px solid ${C.border}`,paddingTop:"0.75rem",marginTop:"0.75rem"}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:"0.5rem"}}>
@@ -1243,7 +1345,7 @@ function AdminPanel({onLogout}) {
             const KO_ROUNDS=[
               {id:"r32",label:"16avos",icon:"⚔️"},{id:"r16",label:"8avos",icon:"🥊"},
               {id:"qf",label:"Cuartos",icon:"🔥"},{id:"sf",label:"Semis",icon:"💥"},
-              {id:"final",label:"Final",icon:"👑"},
+              {id:"third",label:"3° Puesto",icon:"🥉"},{id:"final",label:"Final",icon:"👑"},
             ];
             const r32t=R32_MATCHES.map(m=>({...m,homeId:resolveSlot(m.home,null,res),awayId:resolveSlot(m.away,null,res)}));
             return KO_ROUNDS.map(round=>{
