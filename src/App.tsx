@@ -452,8 +452,9 @@ function matchPts(pred,real) {
 }
 
 function calcPoints(sc,sp,rr,jk=[]) {
-  if(!rr) return {total:0,partidos:0,especiales:0};
+  if(!rr) return {total:0,partidos:0,especiales:0,breakdown:{}};
   let partidos=0,especiales=0;
+  const bd={campeon:0,subcampeon:0,goleador:0,goleadorDesignado:0,arqueroDesignado:0,clasificados:0,goleadorDesignadoName:"",arqueroDesignadoName:""};
   try {
     ALL_MATCHES.forEach(m=>{
       const real=rr[m.id]; if(!real) return;
@@ -461,32 +462,30 @@ function calcPoints(sc,sp,rr,jk=[]) {
       if(jk.includes(m.id)) p*=2;
       partidos+=p;
     });
-    if(sp?.campeon&&rr.campeon&&sp.campeon===rr.campeon) especiales+=PTS_CAMPEON;
-    if(sp?.subcampeon&&rr.subcampeon&&sp.subcampeon===rr.subcampeon) especiales+=PTS_SUBCAMPEON;
+    if(sp?.campeon&&rr.campeon&&sp.campeon===rr.campeon){bd.campeon=PTS_CAMPEON;especiales+=PTS_CAMPEON;}
+    if(sp?.subcampeon&&rr.subcampeon&&sp.subcampeon===rr.subcampeon){bd.subcampeon=PTS_SUBCAMPEON;especiales+=PTS_SUBCAMPEON;}
     const sg=String(sp?.goleador||"").trim().toLowerCase(),rg=String(rr.goleador||"").trim().toLowerCase();
-    if(sg&&rg&&sg===rg) especiales+=PTS_GOLEADOR;
-    // Goleador designado: nuevo formato multi-jugador
+    if(sg&&rg&&sg===rg){bd.goleador=PTS_GOLEADOR;especiales+=PTS_GOLEADOR;}
     const sgd=String(sp?.goleadorDesignado||"").trim().toLowerCase();
     if(sgd){
       const gdMap=rr.goleadoresDesignados||{};
-      const gdGoals=Object.entries(gdMap).find(([k])=>k.trim().toLowerCase()===sgd)?.[1]||0;
-      especiales+=parseInt(gdGoals)||0;
+      const gdGoals=parseInt(Object.entries(gdMap).find(([k])=>k.trim().toLowerCase()===sgd)?.[1])||0;
+      bd.goleadorDesignado=gdGoals;bd.goleadorDesignadoName=sp.goleadorDesignado;especiales+=gdGoals;
     }
-    // Arquero designado: nuevo formato multi-jugador
     const saq=String(sp?.arqueroDesignado||"").trim().toLowerCase();
     if(saq){
       const aqMap=rr.arquerosDesignados||{};
-      const aqCS=Object.entries(aqMap).find(([k])=>k.trim().toLowerCase()===saq)?.[1]||0;
-      especiales+=parseInt(aqCS)||0;
+      const aqCS=parseInt(Object.entries(aqMap).find(([k])=>k.trim().toLowerCase()===saq)?.[1])||0;
+      bd.arqueroDesignado=aqCS;bd.arqueroDesignadoName=sp.arqueroDesignado;especiales+=aqCS;
     }
     const uG=sp?.clasificados?.grupos||{},rG=rr.clasificados?.grupos||{};
     Object.keys(GROUPS).forEach(gid=>{
       const uArr=uG[gid]||[],rArr=rG[gid]||[];
-      uArr.slice(0,2).forEach(id=>{ if(rArr.includes(id)) especiales+=PTS_CLASIFICADO; });
-      if(uArr[2]&&rArr.includes(uArr[2])) especiales+=PTS_TERCERO;
+      uArr.slice(0,2).forEach(id=>{ if(rArr.includes(id)){bd.clasificados+=PTS_CLASIFICADO;especiales+=PTS_CLASIFICADO;} });
+      if(uArr[2]&&rArr.includes(uArr[2])){bd.clasificados+=PTS_TERCERO;especiales+=PTS_TERCERO;}
     });
   } catch(_){}
-  return {total:partidos+especiales,partidos,especiales};
+  return {total:partidos+especiales,partidos,especiales,breakdown:bd};
 }
 
 function computeTable(gid,sc) {
@@ -1791,6 +1790,7 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
 // --- RANKING MODAL ------------------------------------------------------------
 function RankingModal({onClose, currentUser, realRes, inline=false}) {
   const [refreshTick, setRefreshTick] = useState(0);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [rows,setRows]=useState([]);
   const [loading,setLoading]=useState(true);
 
@@ -1799,12 +1799,14 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
     (async()=>{
       try {
         const rr = await sGetRealResults();
-        const [allSc,allSp,allJk,allFSc,allFJk] = await Promise.all([
+        const [allSc,allSp,allJk,allFSc,allFJk,approvedUsers] = await Promise.all([
           sGetAllScores(), sbFetch("specials?select=username,data"),
-          sGetAllJokers(), sGetAllFScores(), sGetAllFJokers()
+          sGetAllJokers(), sGetAllFScores(), sGetAllFJokers(), sGetApprovedUsers()
         ]);
         const spMap = {};(allSp||[]).forEach(r=>{spMap[r.username]=r.data||{};});
-        const users = Object.keys(allSc).filter(u=>u!=="admin");
+        // Fallback: use allSc keys if approvedUsers is empty
+        const userList = approvedUsers?.length>0 ? approvedUsers.map(u=>u.username) : Object.keys(allSc);
+        const users = userList.filter(u=>u!=="admin");
         const data=await Promise.all(users.map(async un=>{
           const sc=allSc[un]||{}, usp=spMap[un]||{}, jk=allJk[un]||[];
           const fsc=allFSc[un]||{}, fjk=allFJk[un]||[];
@@ -1814,7 +1816,7 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
           if(rr){
             const rObj=Object.fromEntries(ALL_MATCHES.map(m=>[m.id,rr.scores?.[m.id]]));
             const merged={...rObj,...rr.specials};
-            try{grpPts=calcPoints(sc,usp,merged,jk).total;}catch(_){}
+            let breakdown={}; try{const cp=calcPoints(sc,usp,merged,jk);grpPts=cp.total;breakdown=cp.breakdown;}catch(_){}
           }
 
           // Fases finales points (knockout results from real:knockout)
@@ -1837,7 +1839,7 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
           });
           // Top 3 get bonus (calculated after sorting)
           const filled=ALL_MATCHES.filter(m=>{const s=sc[m.id];return s&&!isNaN(parseInt(s.home))&&!isNaN(parseInt(s.away));}).length;
-          return {username:un, grpPts, finPts, krHits, filled, total:ALL_MATCHES.length};
+          return {username:un, grpPts, finPts, krHits, filled, total:ALL_MATCHES.length, breakdown};
         }));
 
         // Apply Rey de Llaves bonus to top 3
@@ -1898,7 +1900,8 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
                 const isMe=r.username===currentUser;
                 const pct=Math.round((r.filled/r.total)*100);
                 return (
-                  <div key={r.username} style={{display:"grid",gridTemplateColumns:"2rem 1fr 5rem 5rem 5rem",gap:"0.25rem",padding:"0.55rem 0.75rem",borderTop:br,background:isMe?"rgba(167,139,250,0.07)":i%2===0?"transparent":"rgba(255,255,255,0.015)",alignItems:"center"}}>
+                  <div key={r.username} style={{borderTop:br,background:isMe?"rgba(167,139,250,0.07)":i%2===0?"transparent":"rgba(255,255,255,0.015)"}}>
+                  <div style={{display:"grid",gridTemplateColumns:"2rem 1fr 5rem 5rem 5rem",gap:"0.25rem",padding:"0.55rem 0.75rem",alignItems:"center"}}>
                     {/* Rank */}
                     <div>{i<3?<span style={{fontSize:"1rem"}}>{icons[i]}</span>:<span style={{fontSize:"0.7rem",fontWeight:900,color:C.muted}}>{i+1}</span>}</div>
                     {/* User */}
@@ -1922,15 +1925,38 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
                       <span style={{fontSize:"0.82rem",fontWeight:900,color:r.finPts>0?C.violet:"rgba(255,255,255,0.25)"}}>{r.finPts}</span>
                       <span style={{fontSize:"0.55rem",color:C.muted}}> pts</span>
                     </div>
-                    {/* Total */}
+                    {/* Total — clickable for breakdown */}
                     <div style={{textAlign:"center"}}>
-                      <div style={{display:"inline-flex",flexDirection:"column",alignItems:"center",padding:"0.2rem 0.5rem",borderRadius:"0.6rem",
+                      <div onClick={()=>setSelectedUser(selectedUser?.username===r.username?null:r)}
+                        style={{display:"inline-flex",flexDirection:"column",alignItems:"center",padding:"0.2rem 0.5rem",borderRadius:"0.6rem",cursor:"pointer",
                         background:i===0?"rgba(251,191,36,0.15)":i===1?"rgba(148,163,184,0.1)":i===2?"rgba(180,83,9,0.1)":isMe?"rgba(167,139,250,0.1)":"rgba(255,255,255,0.05)",
                         border:`1px solid ${i===0?"rgba(251,191,36,0.25)":i===1?"rgba(148,163,184,0.15)":i===2?"rgba(180,83,9,0.15)":isMe?"rgba(167,139,250,0.2)":"rgba(255,255,255,0.07)"}`}}>
                         <span style={{fontSize:"0.9rem",fontWeight:900,color:i<3?podCol[i]:isMe?C.violet:"rgba(255,255,255,0.7)",lineHeight:1}}>{r.totalPts}</span>
-                        <span style={{fontSize:"0.5rem",color:C.muted,lineHeight:1.2}}>pts</span>
+                        <span style={{fontSize:"0.5rem",color:C.muted,lineHeight:1.2}}>pts ▾</span>
                       </div>
                     </div>
+                  </div>{/* end grid row */}
+                    {/* Breakdown row */}
+                    {selectedUser?.username===r.username && (
+                      <div style={{gridColumn:"1/-1",background:"rgba(255,255,255,0.03)",border:`1px solid rgba(255,255,255,0.08)`,borderRadius:"0.6rem",padding:"0.6rem 0.75rem",marginTop:"0.25rem",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:"0.4rem"}}>
+                        {[
+                          {label:"⚽ Partidos", val:r.grpPts, color:"rgba(251,191,36,0.8)"},
+                          {label:"🏆 Campeón", val:r.breakdown?.campeon||0, color:C.gold},
+                          {label:"🥈 Subcampeón", val:r.breakdown?.subcampeon||0, color:"#94a3b8"},
+                          {label:"👟 Goleador", val:r.breakdown?.goleador||0, color:C.emerald},
+                          {label:`👟 ${r.breakdown?.goleadorDesignadoName||"Designado"}`, val:r.breakdown?.goleadorDesignado||0, color:"#fb7185"},
+                          {label:`🧤 ${r.breakdown?.arqueroDesignadoName||"Arquero"}`, val:r.breakdown?.arqueroDesignado||0, color:C.sky},
+                          {label:"🎯 Clasificados", val:r.breakdown?.clasificados||0, color:C.violet},
+                          {label:"🏅 Finales", val:r.finPts||0, color:C.violet},
+                          {label:"👑 Rey Llaves", val:r.krHits||0, color:C.gold},
+                        ].map(({label,val,color})=>(
+                          <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0.2rem 0.4rem",background:"rgba(255,255,255,0.03)",borderRadius:"0.4rem"}}>
+                            <span style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.5)"}}>{label}</span>
+                            <span style={{fontSize:"0.72rem",fontWeight:900,color:val>0?color:"rgba(255,255,255,0.2)"}}>{val} pts</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
