@@ -696,12 +696,12 @@ function ScoreInput({value,onChange,disabled}) {
 }
 
 // --- MATCH CARD ---------------------------------------------------------------
-function MatchCard({match,scores,onScore,isJoker,onJoker,jokersLeft}) {
+function MatchCard({match,scores,onScore,isJoker,onJoker,jokersLeft,adminMode=false}) {
   const home=T[match.home],away=T[match.away];
   const s=scores[match.id]||{home:"",away:""};
   const h=parseInt(s.home),a=parseInt(s.away),has=!isNaN(h)&&!isNaN(a);
   const res=!has?null:h>a?"home":a>h?"away":"draw";
-  const locked=isLocked(match.id);
+  const locked=adminMode?false:isLocked(match.id);
   const canJoker=!locked&&(isJoker||jokersLeft>0);
 
   const resColor = res==="draw"?"rgba(96,165,250,0.15)":res==="home"?"rgba(52,211,153,0.12)":res==="away"?"rgba(251,113,133,0.12)":"transparent";
@@ -1408,7 +1408,7 @@ function AdminPanel({onLogout}) {
               badge={f.id} badgeColor="rgba(251,113,133,0.5)" title={f.label} sub={f.sub}>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:"0.5rem"}}>
                 {f.matches.map(m=>(
-                  <MatchCard key={m.id} match={m} scores={res} onScore={(id,side,v)=>setRes(p=>({...p,[id]:{...p[id],[side]:v}}))} isJoker={false} onJoker={null} jokersLeft={0}/>
+                  <MatchCard key={m.id} match={m} scores={res} onScore={(id,side,v)=>setRes(p=>({...p,[id]:{...p[id],[side]:v}}))} isJoker={false} onJoker={null} jokersLeft={0} adminMode={true}/>
                 ))}
               </div>
             </Accordion>
@@ -1555,14 +1555,14 @@ function resolveSlot(slot, realRes, groupScores) {
 }
 
 // Knockout score input card
-function KnockoutCard({matchId, home, away, homeLabel, awayLabel, fScores, onScore, isJoker, onJoker, jokersLeft, round}) {
+function KnockoutCard({matchId, home, away, homeLabel, awayLabel, fScores, onScore, isJoker, onJoker, jokersLeft, round, adminMode=false}) {
   const s = fScores[matchId]||{home:"",away:""};
   const h = parseInt(s.home), a = parseInt(s.away);
   const has = !isNaN(h)&&!isNaN(a);
   const res = !has?null:h>a?"home":a>h?"away":"draw";
   const homeT = home?T[home]:null;
   const awayT = away?T[away]:null;
-  const locked = isLocked(matchId);
+  const locked = adminMode?false:isLocked(matchId);
   const canJoker = !locked&&(isJoker||jokersLeft>0);
 
   const resColor = res==="draw"?"rgba(96,165,250,0.12)":res==="home"?"rgba(52,211,153,0.1)":res==="away"?"rgba(251,113,133,0.1)":"transparent";
