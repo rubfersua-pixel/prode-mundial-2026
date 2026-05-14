@@ -1791,6 +1791,7 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
 function RankingModal({onClose, currentUser, realRes, inline=false}) {
   const [refreshTick, setRefreshTick] = useState(0);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [error, setError] = useState(null);
   const [rows,setRows]=useState([]);
   const [loading,setLoading]=useState(true);
 
@@ -1850,7 +1851,7 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
         data.forEach(r=>{ r.totalPts=r.grpPts+r.finPts; });
         data.sort((a,b)=>b.totalPts-a.totalPts||b.filled-a.filled||a.username.localeCompare(b.username));
         if(alive) setRows(data);
-      }catch(_){}
+      }catch(err){console.error('Ranking error:',err);if(alive)setError(String(err));}
       if(alive) setLoading(false);
     })();
     return()=>{alive=false;};
@@ -1882,8 +1883,10 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
 
         {loading ? (
           <div style={{padding:"3rem",textAlign:"center",color:C.muted,fontWeight:900,fontSize:"0.75rem",textTransform:"uppercase"}}>Cargando...</div>
+        ) : error ? (
+          <div style={{padding:"2rem",textAlign:"center"}}><div style={{fontSize:"0.7rem",color:"#fb7185",wordBreak:"break-all"}}>{error}</div><button onClick={()=>{setError(null);setRefreshTick(p=>p+1);}} style={{...S.btn,marginTop:"1rem",padding:"0.4rem 1rem",background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",color:"white",fontSize:"0.7rem"}}>Reintentar</button></div>
         ) : rows.length===0 ? (
-          <div style={{padding:"3rem",textAlign:"center"}}><div style={{fontSize:"2rem",marginBottom:"0.5rem"}}>👥</div><div style={{color:C.muted,fontSize:"0.75rem",fontWeight:900,textTransform:"uppercase"}}>Sin usuarios</div></div>
+          <div style={{padding:"3rem",textAlign:"center"}}><div style={{fontSize:"2rem",marginBottom:"0.5rem"}}>👥</div><div style={{color:C.muted,fontSize:"0.75rem",fontWeight:900,textTransform:"uppercase"}}>Sin usuarios</div><button onClick={()=>setRefreshTick(p=>p+1)} style={{...S.btn,marginTop:"1rem",padding:"0.4rem 1rem",background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",color:"white",fontSize:"0.7rem"}}>Actualizar</button></div>
         ) : (
           <>
             {/* Column headers */}
