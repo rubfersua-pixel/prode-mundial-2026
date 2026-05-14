@@ -1657,7 +1657,7 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
 
   // NON-HOOK VARS
   const jLeft=2-fJokers.length;
-  const handleScore=(id,side,v)=>setFScores(p=>({...p,[id]:{...p[id],[side]:v}}));
+  const handleScore=(id,side,v)=>{ if(isLocked(id)) return; setFScores(p=>({...p,[id]:{...p[id],[side]:v}})); };
   const handleJoker=id=>setFJokers(p=>p.includes(id)?p.filter(x=>x!==id):p.length>=2?p:[...p,id]);
   const toggleRound=id=>setSubRound(p=>p===id?null:id);
   const r32Teams=R32_MATCHES.map(m=>({...m,homeId:resolveSlot(m.home,realRes,scores),awayId:resolveSlot(m.away,realRes,scores)}));
@@ -1790,6 +1790,7 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
 
 // --- RANKING MODAL ------------------------------------------------------------
 function RankingModal({onClose, currentUser, realRes, inline=false}) {
+  const [refreshTick, setRefreshTick] = useState(0);
   const [rows,setRows]=useState([]);
   const [loading,setLoading]=useState(true);
 
@@ -1851,14 +1852,11 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
       if(alive) setLoading(false);
     })();
     return()=>{alive=false;};
-  },[]);
+  },[refreshTick]);
 
   // Auto-refresh every 30 seconds
   useEffect(()=>{
-    const t = setInterval(()=>{
-      setLoading(true);
-      setRows([]);
-    }, 30000);
+    const t = setInterval(()=>setRefreshTick(p=>p+1), 30000);
     return()=>clearInterval(t);
   },[]);
 
@@ -1940,7 +1938,7 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
 
             {/* Refresh */}
             <div style={{display:"flex",justifyContent:"center",padding:"0.6rem",borderTop:br,flexShrink:0}}>
-              <button onClick={()=>{setRows([]);setLoading(true);}} style={{...S.btn,display:"flex",alignItems:"center",gap:"0.4rem",padding:"0.4rem 0.875rem",background:"rgba(255,255,255,0.05)",border:br,color:C.muted,fontSize:"0.65rem",textTransform:"uppercase",letterSpacing:"0.1em"}}>
+              <button onClick={()=>setRefreshTick(p=>p+1)} style={{...S.btn,display:"flex",alignItems:"center",gap:"0.4rem",padding:"0.4rem 0.875rem",background:"rgba(255,255,255,0.05)",border:br,color:C.muted,fontSize:"0.65rem",textTransform:"uppercase",letterSpacing:"0.1em"}}>
                 <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 Actualizar
               </button>
@@ -1956,6 +1954,7 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
 function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
   const [data,setData]=useState(null);
   const [loading,setLoading]=useState(true);
+  const [refreshTick,setRefreshTick]=useState(0);
 
   const allM=ALL_MATCHES, locked=allM.filter(m=>isLocked(m.id)), anyLocked=locked.length>0;
   const nav=anyLocked?locked:allM;
@@ -1974,14 +1973,11 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
       if(alive)setLoading(false);
     })();
     return()=>{alive=false;};
-  },[]);
+  },[refreshTick]);
 
   // Auto-refresh every 20 seconds
   useEffect(()=>{
-    const t = setInterval(()=>{
-      setData(null);
-      setLoading(true);
-    }, 20000);
+    const t = setInterval(()=>setRefreshTick(p=>p+1), 20000);
     return()=>clearInterval(t);
   },[]);
 
@@ -2481,6 +2477,7 @@ export default function App() {
 
   // Auto-save scores - save individual score on change
   const handleScore=useCallback((id,side,v)=>{
+    if(isLocked(id)) return; // bloqueo en servidor, no solo en UI
     setScores(p=>{
       const ns={...p,[id]:{...p[id],[side]:v}};
       if(user) sSetScore(user,id,side==="home"?v:ns[id]?.home||"",side==="away"?v:ns[id]?.away||"");
