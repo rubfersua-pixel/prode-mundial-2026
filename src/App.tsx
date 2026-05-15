@@ -468,14 +468,26 @@ function calcPoints(sc,sp,rr,jk=[]) {
     if(sg&&rg&&sg===rg){bd.goleador=PTS_GOLEADOR;especiales+=PTS_GOLEADOR;}
     const sgd=String(sp?.goleadorDesignado||"").trim().toLowerCase();
     if(sgd){
+      // Sum from goleadoresDesignados (manual total) + designadoEvents (per match)
       const gdMap=rr.goleadoresDesignados||{};
-      const gdGoals=parseInt(Object.entries(gdMap).find(([k])=>k.trim().toLowerCase()===sgd)?.[1])||0;
+      let gdGoals=parseInt(Object.entries(gdMap).find(([k])=>k.trim().toLowerCase()===sgd)?.[1])||0;
+      // Add from designadoEvents per match
+      Object.values(rr.designadoEvents||{}).forEach(ev=>{
+        const matchGoals=Object.entries(ev.goleadores||{}).find(([k])=>k.trim().toLowerCase()===sgd)?.[1];
+        if(matchGoals) gdGoals+=parseInt(matchGoals)||0;
+      });
       bd.goleadorDesignado=gdGoals;bd.goleadorDesignadoName=sp.goleadorDesignado;especiales+=gdGoals;
     }
     const saq=String(sp?.arqueroDesignado||"").trim().toLowerCase();
     if(saq){
+      // Sum from arquerosDesignados (manual total) + designadoEvents (per match)
       const aqMap=rr.arquerosDesignados||{};
-      const aqCS=parseInt(Object.entries(aqMap).find(([k])=>k.trim().toLowerCase()===saq)?.[1])||0;
+      let aqCS=parseInt(Object.entries(aqMap).find(([k])=>k.trim().toLowerCase()===saq)?.[1])||0;
+      // Add from designadoEvents per match
+      Object.values(rr.designadoEvents||{}).forEach(ev=>{
+        const hadCleanSheet=Object.entries(ev.arqueros||{}).find(([k])=>k.trim().toLowerCase()===saq)?.[1];
+        if(hadCleanSheet===true) aqCS+=1;
+      });
       bd.arqueroDesignado=aqCS;bd.arqueroDesignadoName=sp.arqueroDesignado;especiales+=aqCS;
     }
     const uG=sp?.clasificados?.grupos||{},rG=rr.clasificados?.grupos||{};
