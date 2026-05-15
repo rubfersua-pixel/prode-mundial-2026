@@ -227,7 +227,7 @@ const sDeleteGameData = async () => {
 };
 
 const C = {
-  bg:       "#070f07",
+  bg:       "#080808",
   surface:  "rgba(255,255,255,0.07)",
   border:   "rgba(255,255,255,0.12)",
   border2:  "rgba(255,255,255,0.2)",
@@ -654,7 +654,7 @@ function PlayerSelect({value, onChange}) {
           </button>
           {open && (
             <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:999,
-              background:"#1a2a1a",border:`1px solid rgba(255,255,255,0.15)`,borderRadius:"0.75rem",
+              background:"#111111",border:`1px solid rgba(255,255,255,0.15)`,borderRadius:"0.75rem",
               overflow:"hidden",boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
               <div style={{maxHeight:"200px",overflowY:"auto"}}>
                 {players.map(p=>(
@@ -885,7 +885,7 @@ function TeamSelect({value, onChange, placeholder="— Elegir selección —"}) 
       {/* Dropdown */}
       {open && (
         <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:999,
-          background:"#1a2a1a",border:`1px solid rgba(255,255,255,0.15)`,borderRadius:"0.75rem",
+          background:"#111111",border:`1px solid rgba(255,255,255,0.15)`,borderRadius:"0.75rem",
           overflow:"hidden",boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
           {/* Search */}
           <div style={{padding:"0.5rem"}}>
@@ -1959,7 +1959,7 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
   return (
     <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"1rem",paddingTop:"4rem"}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(4px)"}}/>
-      <div style={{position:"relative",width:"100%",maxWidth:"600px",maxHeight:"82vh",display:"flex",flexDirection:"column",background:"#0d1f0d",border:br,borderRadius:"1.25rem",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.6)"}}>
+      <div style={{position:"relative",width:"100%",maxWidth:"600px",maxHeight:"82vh",display:"flex",flexDirection:"column",background:"#0d0d0d",border:br,borderRadius:"1.25rem",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.6)"}}>
 
         {/* Header */}
         <div style={{padding:"0.875rem 1rem",borderBottom:br,display:"flex",alignItems:"center",gap:"0.5rem",flexShrink:0}}>
@@ -2105,7 +2105,7 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
   const users=data?Object.keys(data.sc).sort():[];
   const vis=mLocked?users:(users.includes(currentUser)?[currentUser]:[]);
 
-  const bg="#0d1f0d", br=`1px solid ${C.border}`;
+  const bg="#0d0d0d", br=`1px solid ${C.border}`;
   const hdr={fontSize:"0.55rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em"};
   const grid={display:"grid",gridTemplateColumns:"1fr 4.5rem 4rem 3rem 4rem",gap:"0.25rem"};
 
@@ -2968,3 +2968,48 @@ export default function App() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
