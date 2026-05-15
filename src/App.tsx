@@ -688,7 +688,7 @@ function PlayerSelect({value, onChange}) {
 // --- GRASS BACKGROUND ---------------------------------------------------------
 function GrassBg() {
   return (
-    <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",background:"#0a1a0a"}}/>
+    <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",background:"#080808"}}/>
   );
 }
 
@@ -2263,7 +2263,7 @@ function RulesModal({onClose,inline=false}) {
   return (
     <div style={inline?{}:{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"1rem",paddingTop:"3rem"}}>
       {!inline&&<div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(4px)"}}/>}
-      <div style={{position:"relative",width:"100%",maxWidth:inline?"100%":"540px",maxHeight:inline?"calc(100vh - 180px)":"86vh",display:"flex",flexDirection:"column",background:"#0a1a0a",border:`1px solid ${C.sky}40`,borderRadius:inline?"1rem":"1.25rem",overflow:"hidden"}}>
+      <div style={{position:"relative",width:"100%",maxWidth:inline?"100%":"540px",maxHeight:inline?"calc(100vh - 180px)":"86vh",display:"flex",flexDirection:"column",background:"#080808",border:`1px solid ${C.sky}40`,borderRadius:inline?"1rem":"1.25rem",overflow:"hidden"}}>
 
         {/* Header */}
         <div style={{padding:"0.875rem 1rem",borderBottom:bo,display:"flex",alignItems:"center",gap:"0.5rem",flexShrink:0,background:"rgba(56,189,248,0.06)"}}>
@@ -2476,7 +2476,7 @@ function FloatingInfo({onOpen}) {
         const te=()=>{handleEnd();window.removeEventListener('touchmove',tm);window.removeEventListener('touchend',te);};
         window.addEventListener('touchmove',tm,{passive:false});window.addEventListener('touchend',te);}}
       style={{position:"fixed",left:x,top:y,zIndex:99,cursor:dragging?"grabbing":"grab",userSelect:"none",touchAction:"none"}}>
-      <div style={{width:"44px",height:"44px",borderRadius:"50%",background:"rgba(10,26,10,0.92)",border:"1px solid rgba(255,255,255,0.18)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 12px rgba(0,0,0,0.4)"}}>
+      <div style={{width:"44px",height:"44px",borderRadius:"50%",background:"rgba(8,8,8,0.92)",border:"1px solid rgba(255,255,255,0.18)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 12px rgba(0,0,0,0.4)"}}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
@@ -2759,7 +2759,7 @@ export default function App() {
       <div style={{position:"relative",zIndex:1,maxWidth:"672px",margin:"0 auto",width:"100%",display:"flex",flexDirection:"column",height:"100%"}}>
 
         {/* STICKY HEADER — siempre visible, botones de fase solo en pronósticos */}
-        <div style={{position:"sticky",top:0,zIndex:50,background:"rgba(10,26,10,0.97)",backdropFilter:"blur(12px)",padding:`1.5rem 1rem ${showPronosticos?"0.9rem":"1rem"}`,borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+        <div style={{position:"sticky",top:0,zIndex:50,background:"rgba(8,8,8,0.97)",backdropFilter:"blur(12px)",padding:`1.5rem 1rem ${showPronosticos?"0.9rem":"1rem"}`,borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
 
           {/* User bar */}
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showPronosticos?"1.15rem":"0",gap:"0.5rem"}}>
@@ -2936,7 +2936,7 @@ export default function App() {
       </div>
 
       {/* BOTTOM NAV */}
-      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:"rgba(10,26,10,0.97)",borderTop:`1px solid rgba(255,255,255,0.1)`,backdropFilter:"blur(12px)",display:"flex",alignItems:"stretch",justifyContent:"space-around",height:"64px"}}>
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:"rgba(8,8,8,0.97)",borderTop:`1px solid rgba(255,255,255,0.1)`,backdropFilter:"blur(12px)",display:"flex",alignItems:"stretch",justifyContent:"space-around",height:"64px"}}>
         {[
           {id:"pronosticos", label:"Pronósticos", icon:"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"},
           {id:"especiales", label:"Especiales", icon:"M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"},
