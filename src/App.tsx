@@ -2221,7 +2221,7 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
                           <span style={{fontSize:"1.4rem"}}>{r.icon}</span>
                           <div style={{width:"1.2rem",height:"1.2rem",borderRadius:"0.3rem",background:isMe?"rgba(52,211,153,0.2)":"rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.55rem",fontWeight:900,color:isMe?C.emerald:C.muted,flexShrink:0}}>{r.user[0].toUpperCase()}</div>
                           <span style={{fontSize:"0.7rem",fontWeight:700,color:isMe?C.emerald:"rgba(255,255,255,0.8)",flex:1}}>{r.user}{isMe&&<span style={{color:C.emerald,fontSize:"0.55rem"}}> ★</span>}</span>
-                          <span style={{fontSize:"0.62rem",color:"rgba(255,255,255,0.4)"}}>{r.player}</span>
+                          <span style={{fontSize:"0.62rem",color:"rgba(255,255,255,0.75)"}}>{r.player}</span>
                           <span style={{fontSize:"0.75rem",fontWeight:900,color:r.color,background:r.type==="valla"?"rgba(56,189,248,0.12)":"rgba(251,113,133,0.12)",padding:"0.1rem 0.35rem",borderRadius:"0.3rem"}}>+{r.value}pt{r.value!==1?"s":""}</span>
                         </div>
                       );
@@ -2971,3 +2971,51 @@ export default function App() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
