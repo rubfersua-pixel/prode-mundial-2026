@@ -1813,11 +1813,11 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
           const fsc=allFSc[un]||{}, fjk=allFJk[un]||[];
 
           // Phase groups points
-          let grpPts=0;
+          let grpPts=0,breakdown={};
           if(rr){
             const rObj=Object.fromEntries(ALL_MATCHES.map(m=>[m.id,rr.scores?.[m.id]]));
             const merged={...rObj,...rr.specials};
-            let breakdown={}; try{const cp=calcPoints(sc,usp,merged,jk);grpPts=cp.total;breakdown=cp.breakdown;}catch(_){}
+            try{const cp=calcPoints(sc,usp,merged,jk);grpPts=cp.total;breakdown=cp.breakdown||{};}catch(_){}
           }
 
           // Fases finales points (knockout results from real:knockout)
