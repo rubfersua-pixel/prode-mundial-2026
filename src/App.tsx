@@ -1233,9 +1233,11 @@ function AdminPanel({onLogout}) {
   const [openF,setOpenF]=useState(null);
   const [vis,setVis]=useState(PAGE_SIZE);
   const [saved,setSaved]=useState(false);
+  const [userSpecials,setUserSpecials]=useState([]);
 
   useEffect(()=>{
     sGetRealResults().then(r=>{if(r){if(Object.keys(r.scores||{}).length)setRes(p=>({...p,...r.scores}));if(r.specials&&Object.keys(r.specials).length)setRsp(p=>({...p,...r.specials}));if(r.knockoutResults&&Object.keys(r.knockoutResults).length)setKoRes(r.knockoutResults);}}).catch(()=>{});
+    sbFetch("specials?select=username,data").then(d=>setUserSpecials(d||[])).catch(()=>{});
   },[]);
 
   const save=async()=>{
@@ -1434,7 +1436,15 @@ function AdminPanel({onLogout}) {
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:"0.5rem"}}>
                 {f.matches.map(m=>{
                   const hasResult = res[m.id]&&!isNaN(parseInt(res[m.id]?.home))&&!isNaN(parseInt(res[m.id]?.away));
-                  const desig = getDesignadosForMatch(m, rsp.goleadoresDesignados, rsp.arquerosDesignados);
+                  // Build maps from all users who designated a player
+                  const allGD={...rsp.goleadoresDesignados};
+                  const allAQ={...rsp.arquerosDesignados};
+                  userSpecials.forEach(u=>{
+                    const sp=u.data||{};
+                    if(sp.goleadorDesignado&&!(sp.goleadorDesignado in allGD)) allGD[sp.goleadorDesignado]="";
+                    if(sp.arqueroDesignado&&!(sp.arqueroDesignado in allAQ)) allAQ[sp.arqueroDesignado]="";
+                  });
+                  const desig = getDesignadosForMatch(m, allGD, allAQ);
                   const hasDesig = desig.goleadores.length>0||desig.arqueros.length>0;
                   return (
                     <div key={m.id}>
