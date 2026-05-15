@@ -622,7 +622,7 @@ const PLAYERS = {
 };
 
 // --- PLAYER SELECT ------------------------------------------------------------
-function PlayerSelect({value, onChange}) {
+function PlayerSelect({value, onChange, disabled=false}) {
   const [teamId, setTeamId] = useState(
     value ? Object.entries(PLAYERS).find(([,players])=>players.includes(value))?.[0] || "" : ""
   );
@@ -632,8 +632,23 @@ function PlayerSelect({value, onChange}) {
 
   const handleTeamChange = (id) => {
     setTeamId(id);
-    onChange(""); // reset player when team changes
+    onChange("");
   };
+
+  if(disabled) return (
+    <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
+      <TeamSelect value={teamId} onChange={()=>{}} disabled={true} placeholder="1. Elegir selección..."/>
+      {value && (
+        <div style={{padding:"0.625rem 0.75rem",display:"flex",alignItems:"center",gap:"0.5rem",
+          background:"rgba(251,113,133,0.12)",border:"1px solid rgba(251,113,133,0.35)",
+          borderRadius:"0.75rem",cursor:"not-allowed"}}>
+          {team&&<FlagImg team={team} size={18}/>}
+          <span style={{fontSize:"0.8rem",fontWeight:700,color:"rgba(251,113,133,0.7)"}}>👤 {value}</span>
+          <span style={{marginLeft:"auto",fontSize:"0.65rem",color:"rgba(251,113,133,0.5)"}}>🔒</span>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
@@ -860,12 +875,23 @@ function GroupTable({gid,gi,scores,isOpen,onToggle}) {
 }
 
 // --- CUSTOM TEAM SELECTOR ----------------------------------------------------
-function TeamSelect({value, onChange, placeholder="— Elegir selección —"}) {
+function TeamSelect({value, onChange, placeholder="— Elegir selección —", disabled=false}) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const selected = value ? T[value] : null;
   const filtered = TEAMS_LIST.filter(t =>
     !search || t.name.toLowerCase().includes(search.toLowerCase()) || t.short.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if(disabled) return (
+    <div style={{padding:"0.625rem 0.75rem",display:"flex",alignItems:"center",gap:"0.5rem",
+      background:"rgba(251,113,133,0.12)",border:"1px solid rgba(251,113,133,0.35)",
+      borderRadius:"0.75rem",cursor:"not-allowed"}}>
+      {selected
+        ? <><FlagImg team={selected} size={20}/><span style={{fontSize:"0.8rem",fontWeight:700,color:"rgba(251,113,133,0.7)"}}>{selected.name}</span><span style={{marginLeft:"auto",fontSize:"0.65rem",color:"rgba(251,113,133,0.5)"}}>🔒</span></>
+        : <span style={{fontSize:"0.8rem",color:"rgba(251,113,133,0.5)"}}>— Sin selección —</span>
+      }
+    </div>
   );
 
   return (
@@ -2971,51 +2997,3 @@ export default function App() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
