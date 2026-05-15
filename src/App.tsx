@@ -2197,7 +2197,7 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
                   if(g<=0) return;
                   const affected = Object.entries(spMap).filter(([,sp])=>sp?.goleadorDesignado?.trim().toLowerCase()===player.trim().toLowerCase());
                   affected.forEach(([un])=>{
-                    rows.push({type:"gol", user:un, player, value:g, icon:"👟", color:"#fb7185"});
+                    rows.push({type:"gol", user:un, player, value:g, icon:"⚽", color:"#fb7185"});
                   });
                 });
 
@@ -2570,7 +2570,10 @@ export default function App() {
   const [navTab,setNavTab]         = useState("pronosticos"); // bottom nav active tab
   const [infoOpen,setInfoOpen]     = useState(false);
   const [muroOpen,setMuroOpen]     = useState(false);
-  const [muroIdx,setMuroIdx]       = useState(0);
+  const [muroIdx,setMuroIdx]       = useState(()=>{
+    const locked=ALL_MATCHES.filter(m=>isLocked(m.id));
+    return locked.length>0 ? locked.length-1 : 0;
+  });
   const [rankModalOpen,setRankModal] = useState(false);
   const [subRound,setSubRound] = useState(null); // null = nothing open
   const [fScores,setFScores]   = useState({}); // knockout scores keyed by matchId
@@ -2968,49 +2971,3 @@ export default function App() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
