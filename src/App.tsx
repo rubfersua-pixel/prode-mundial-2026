@@ -2162,10 +2162,10 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
               </div>}
 
               {/* Designado Events for this match */}
-              {mLocked&&data?.rr?.designadoEvents?.[m?.id]&&(()=>{
-                const ev = data.rr.designadoEvents[m.id];
-                const gdMap = data.rr.goleadoresDesignados||{};
-                const aqMap = data.rr.arquerosDesignados||{};
+              {mLocked&&data?.rr?.specials?.designadoEvents?.[m?.id]&&(()=>{
+                const ev = data.rr.specials.designadoEvents[m.id];
+                const gdMap = data.rr.specials?.goleadoresDesignados||{};
+                const aqMap = data.rr.specials?.arquerosDesignados||{};
                 const spMap = data.sp||{};
                 const rows = [];
 
