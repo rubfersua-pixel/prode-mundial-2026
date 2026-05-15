@@ -2218,7 +2218,7 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
                       const isMe = r.user===currentUser;
                       return (
                         <div key={i} style={{display:"flex",alignItems:"center",gap:"0.4rem",padding:"0.2rem 0",borderTop:i>0?`1px solid rgba(255,255,255,0.04)`:"none"}}>
-                          <span style={{fontSize:"0.75rem"}}>{r.icon}</span>
+                          <span style={{fontSize:"1.4rem"}}>{r.icon}</span>
                           <div style={{width:"1.2rem",height:"1.2rem",borderRadius:"0.3rem",background:isMe?"rgba(52,211,153,0.2)":"rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.55rem",fontWeight:900,color:isMe?C.emerald:C.muted,flexShrink:0}}>{r.user[0].toUpperCase()}</div>
                           <span style={{fontSize:"0.7rem",fontWeight:700,color:isMe?C.emerald:"rgba(255,255,255,0.8)",flex:1}}>{r.user}{isMe&&<span style={{color:C.emerald,fontSize:"0.55rem"}}> ★</span>}</span>
                           <span style={{fontSize:"0.62rem",color:"rgba(255,255,255,0.4)"}}>{r.player}</span>
@@ -2968,6 +2968,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
