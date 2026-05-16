@@ -1013,10 +1013,17 @@ function SpecialPicks({sp,onChange,isOpen,onToggle,locked=false,designatedLocked
         </div>
 
         {/* Clasificados */}
-        <div style={{borderTop:`1px solid ${C.border}`,paddingTop:"1rem",marginTop:"0.5rem"}}>
+        <div style={{borderTop:`1px solid ${locked?"rgba(251,113,133,0.25)":C.border}`,paddingTop:"1rem",marginTop:"0.5rem",
+          background:locked?"rgba(251,113,133,0.04)":"transparent",borderRadius:locked?"0.6rem":"0",padding:locked?"0.75rem":"0",paddingTop:"1rem"}}>
+          {locked&&(
+            <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.6rem",padding:"0.3rem 0.6rem",background:"rgba(251,113,133,0.1)",border:"1px solid rgba(251,113,133,0.3)",borderRadius:"0.5rem"}}>
+              <span style={{fontSize:"0.85rem"}}>🔒</span>
+              <span style={{fontSize:"0.65rem",fontWeight:700,color:"#fb7185"}}>Clasificados cerrados</span>
+            </div>
+          )}
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"0.75rem"}}>
             <div>
-              <div style={{fontSize:"0.8rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:"white"}}>🎯 Clasificados a 16avos</div>
+              <div style={{fontSize:"0.8rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.05em",color:locked?"rgba(251,113,133,0.7)":"white"}}>🎯 Clasificados a 16avos</div>
               <div style={{fontSize:"0.6rem",color:C.muted,marginTop:"0.15rem"}}>Hasta 3 por grupo · 1°/2° +{PTS_CLASIFICADO}pt · 3° +{PTS_TERCERO}pts</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:"0.5rem"}}>
@@ -1041,14 +1048,14 @@ function SpecialPicks({sp,onChange,isOpen,onToggle,locked=false,designatedLocked
                       const team=T[tid],isSel=sel.includes(tid),pos=sel.indexOf(tid),isThird=isSel&&pos===2;
                       const thirdsCount=Object.values(grupos).filter(a=>a?.length===3).length;
                       const wouldBeThird=!isSel&&sel.length===2;
-                      const disabled=!isSel&&(full||gFull||total>=32||(wouldBeThird&&thirdsCount>=8));
+                      const disabled=locked||(!isSel&&(full||gFull||total>=32||(wouldBeThird&&thirdsCount>=8)));
                       return (
                         <button key={tid} onClick={()=>toggleGrupo(gid,tid)} disabled={disabled}
                           style={{...S.btn,padding:"0.3rem 0.2rem",display:"flex",flexDirection:"column",alignItems:"center",gap:"0.1rem",
-                            background:isThird?"rgba(251,191,36,0.15)":isSel?"rgba(52,211,153,0.15)":disabled?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.05)",
-                            border:`1px solid ${isThird?"rgba(251,191,36,0.4)":isSel?"rgba(52,211,153,0.4)":"rgba(255,255,255,0.08)"}`,
-                            opacity:disabled?0.3:1}}>
-                          <span style={{fontSize:"0.6rem",fontWeight:900,color:isThird?C.gold:isSel?C.emerald:"white",textAlign:"center",lineHeight:1.2,wordBreak:"break-word"}}>{team.name}</span>
+                            background:locked&&isSel?"rgba(251,113,133,0.12)":isThird?"rgba(251,191,36,0.15)":isSel?"rgba(52,211,153,0.15)":disabled?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.05)",
+                            border:`1px solid ${locked&&isSel?"rgba(251,113,133,0.4)":isThird?"rgba(251,191,36,0.4)":isSel?"rgba(52,211,153,0.4)":"rgba(255,255,255,0.08)"}`,
+                            opacity:disabled&&!isSel?0.3:1}}>
+                          <span style={{fontSize:"0.6rem",fontWeight:900,color:locked&&isSel?"rgba(251,113,133,0.8)":isThird?C.gold:isSel?C.emerald:"white",textAlign:"center",lineHeight:1.2,wordBreak:"break-word"}}>{team.name}</span>
                           {isSel&&<span style={{fontSize:"0.5rem",fontWeight:900,color:isThird?C.gold:C.emerald}}>{isThird?"3°":"✓"}</span>}
                         </button>
                       );
@@ -2512,6 +2519,61 @@ function FloatingInfo({onOpen}) {
 }
 
 // --- DESIGNADOS VIEW ----------------------------------------------------------
+
+// --- TODOS CLASIF VIEW --------------------------------------------------------
+function TodosUserRow({u, currentUser}) {
+  const [expanded, setExpanded] = useState(false);
+  const totalClasif = Object.values(u.clasificados||{}).reduce((s,a)=>s+(a?.length||0),0);
+  const isMe = u.username===currentUser;
+  return (
+    <div style={{marginBottom:"0.4rem",background:isMe?"rgba(251,191,36,0.06)":"rgba(255,255,255,0.03)",border:`1px solid ${isMe?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.07)"}`,borderRadius:"0.6rem",overflow:"hidden"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.5rem 0.75rem"}}>
+        <div style={{width:"1.6rem",height:"1.6rem",borderRadius:"0.35rem",background:"rgba(251,191,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center",color:"#f59e0b",fontWeight:900,fontSize:"0.7rem",flexShrink:0}}>{(u.fullName)[0].toUpperCase()}</div>
+        <div style={{fontSize:"0.7rem",fontWeight:700,color:"rgba(255,255,255,0.7)",minWidth:"80px",flexShrink:0}}>{u.fullName}</div>
+        <div style={{flex:1,display:"flex",gap:"0.4rem",flexWrap:"wrap"}}>
+          {u.campeon&&T[u.campeon]&&<span style={{fontSize:"0.62rem",color:"rgba(255,255,255,0.45)"}}>🏆 <span style={{color:"white",fontWeight:700}}>{T[u.campeon].name}</span></span>}
+          {u.subcampeon&&T[u.subcampeon]&&<span style={{fontSize:"0.62rem",color:"rgba(255,255,255,0.45)"}}>🥈 <span style={{color:"white",fontWeight:700}}>{T[u.subcampeon].name}</span></span>}
+          {u.goleador&&<span style={{fontSize:"0.62rem",color:"rgba(255,255,255,0.45)"}}>👟 <span style={{color:"white",fontWeight:700}}>{u.goleador}</span></span>}
+        </div>
+        {totalClasif>0&&(
+          <button onClick={()=>setExpanded(p=>!p)} style={{...S.btn,padding:"0.2rem 0.5rem",fontSize:"0.6rem",fontWeight:700,background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.25)",color:"#a78bfa",flexShrink:0}}>
+            🎯 {totalClasif} {expanded?"▲":"▼"}
+          </button>
+        )}
+      </div>
+      {expanded&&totalClasif>0&&(
+        <div style={{borderTop:"1px solid rgba(255,255,255,0.06)",padding:"0.5rem 0.75rem",background:"rgba(255,255,255,0.02)"}}>
+          {Object.entries(GROUPS).map(([gid,tids],gi)=>{
+            const sel=u.clasificados?.[gid]||[];
+            if(sel.length===0) return null;
+            return (
+              <div key={gid} style={{display:"flex",alignItems:"flex-start",gap:"0.5rem",marginBottom:"0.3rem"}}>
+                <span style={{fontSize:"0.55rem",fontWeight:900,padding:"0.15rem 0.35rem",borderRadius:"0.3rem",background:GCOLORS[gi%GCOLORS.length],color:"#000",flexShrink:0,marginTop:"0.1rem"}}>GRP {gid}</span>
+                <div style={{display:"flex",flexWrap:"wrap",gap:"0.25rem"}}>
+                  {sel.map((tid,idx)=>(
+                    <span key={tid} style={{fontSize:"0.65rem",fontWeight:700,color:idx===2?"#f59e0b":"#34d399",background:idx===2?"rgba(251,191,36,0.1)":"rgba(52,211,153,0.08)",padding:"0.1rem 0.4rem",borderRadius:"0.3rem",border:`1px solid ${idx===2?"rgba(251,191,36,0.2)":"rgba(52,211,153,0.2)"}`}}>
+                      {T[tid]?.name||tid}{idx===2&&<span style={{fontSize:"0.5rem",marginLeft:"0.2rem",opacity:0.7}}> 3°</span>}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TodosClasifView({data, currentUser}) {
+  return (
+    <div style={{padding:"0 1rem"}}>
+      <div style={{fontSize:"0.6rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.35)",marginBottom:"0.75rem"}}>🏆 Campeón · 🥈 Subcampeón · 👟 Goleador · 🎯 Clasificados</div>
+      {data.map(u=><TodosUserRow key={u.username} u={u} currentUser={currentUser}/>)}
+    </div>
+  );
+}
+
 function DesignadosView({currentUser, mode='designados'}) {
   const [data,setData] = useState([]);
   const [loading,setLoading] = useState(true);
@@ -2536,6 +2598,7 @@ function DesignadosView({currentUser, mode='designados'}) {
           campeon: spMap[u.username]?.campeon||"",
           subcampeon: spMap[u.username]?.subcampeon||"",
           goleador: spMap[u.username]?.goleador||"",
+          clasificados: spMap[u.username]?.clasificados?.grupos||{},
         }));
         setData(rows);
       } catch(_){}
@@ -2573,14 +2636,7 @@ function DesignadosView({currentUser, mode='designados'}) {
   );
 
   if(mode==="todos") return (
-    <div style={{padding:"0 1rem"}}>
-      <div style={{fontSize:"0.6rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.35)",marginBottom:"0.75rem"}}>🏆 Campeón · 🥈 Subcampeón · 👟 Goleador</div>
-      {data.map(u=>userRow(u,<>
-        {u.campeon&&T[u.campeon]&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.45)"}}>🏆 <span style={{color:"white",fontWeight:700}}>{T[u.campeon].short}</span></span>}
-        {u.subcampeon&&T[u.subcampeon]&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.45)"}}>🥈 <span style={{color:"white",fontWeight:700}}>{T[u.subcampeon].short}</span></span>}
-        {u.goleador&&<span style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.45)"}}>👟 <span style={{color:"white",fontWeight:700}}>{u.goleador}</span></span>}
-      </>))}
-    </div>
+    <TodosClasifView data={data} currentUser={currentUser}/>
   );
 
   return null;
@@ -2997,3 +3053,53 @@ export default function App() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
