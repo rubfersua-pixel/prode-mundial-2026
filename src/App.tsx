@@ -2898,22 +2898,6 @@ export default function App() {
           {showEspeciales && (
             <div style={{marginTop:"0.6rem",borderTop:"1px solid rgba(255,255,255,0.06)"}}>
 
-              <button onClick={()=>setOpenEspSection(p=>p==="especiales"?null:"especiales")}
-                style={{...S.btn,width:"100%",display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.55rem 0",background:"none",border:"none",borderBottom:`1px solid rgba(255,255,255,0.05)`}}>
-                <span style={{fontSize:"0.9rem"}}>⭐</span>
-                <div style={{flex:1,textAlign:"left"}}>
-                  <div style={{fontSize:"0.72rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.06em",color:C.gold}}>Pronósticos Especiales</div>
-                  <div style={{fontSize:"0.52rem",color:C.muted}}>Campeón · Goleador · Arquero · Clasificados</div>
-                </div>
-                {isSpecialsLocked()
-                  ? <span style={{fontSize:"0.6rem",fontWeight:900,background:"rgba(251,113,133,0.15)",color:"#fb7185",padding:"0.15rem 0.4rem",borderRadius:"0.3rem"}}>🔒</span>
-                  : <span style={{fontSize:"0.6rem",color:C.muted}}>{[sp.campeon,sp.subcampeon,sp.goleador,sp.goleadorDesignado,sp.arqueroDesignado].filter(Boolean).length}/5</span>
-                }
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={openEspSection==="especiales"?"M18 15l-6-6-6 6":"M6 9l6 6 6-6"}/>
-                </svg>
-              </button>
-
               <button onClick={()=>{ if(isDesignatedLocked()) setOpenEspSection(p=>p==="designados"?null:"designados"); }}
                 style={{...S.btn,width:"100%",display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.55rem 0",background:"none",border:"none",borderBottom:`1px solid rgba(255,255,255,0.05)`,opacity:isDesignatedLocked()?1:0.45,cursor:isDesignatedLocked()?"pointer":"default"}}>
                 <span style={{fontSize:"0.9rem"}}>🎯</span>
@@ -2928,7 +2912,7 @@ export default function App() {
               </button>
 
               <button onClick={()=>{ if(isSpecialsLocked()) setOpenEspSection(p=>p==="todos"?null:"todos"); }}
-                style={{...S.btn,width:"100%",display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.55rem 0",background:"none",border:"none",opacity:isSpecialsLocked()?1:0.45,cursor:isSpecialsLocked()?"pointer":"default"}}>
+                style={{...S.btn,width:"100%",display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.55rem 0",background:"none",border:"none",borderBottom:`1px solid rgba(255,255,255,0.05)`,opacity:isSpecialsLocked()?1:0.45,cursor:isSpecialsLocked()?"pointer":"default"}}>
                 <span style={{fontSize:"0.9rem"}}>🏆</span>
                 <div style={{flex:1,textAlign:"left"}}>
                   <div style={{fontSize:"0.72rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.06em",color:isSpecialsLocked()?C.violet:"rgba(255,255,255,0.35)"}}>Especiales de todos</div>
@@ -2938,6 +2922,22 @@ export default function App() {
                   ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d={openEspSection==="todos"?"M18 15l-6-6-6 6":"M6 9l6 6 6-6"}/></svg>
                   : <span style={{fontSize:"0.7rem"}}>🔒</span>
                 }
+              </button>
+
+              <button onClick={()=>setOpenEspSection(p=>p==="especiales"?null:"especiales")}
+                style={{...S.btn,width:"100%",display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.55rem 0",background:"none",border:"none"}}>
+                <span style={{fontSize:"0.9rem"}}>⭐</span>
+                <div style={{flex:1,textAlign:"left"}}>
+                  <div style={{fontSize:"0.72rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.06em",color:C.gold}}>Pronósticos Especiales</div>
+                  <div style={{fontSize:"0.52rem",color:C.muted}}>Campeón · Goleador · Arquero · Clasificados</div>
+                </div>
+                {isSpecialsLocked()
+                  ? <span style={{fontSize:"0.6rem",fontWeight:900,background:"rgba(251,113,133,0.15)",color:"#fb7185",padding:"0.15rem 0.4rem",borderRadius:"0.3rem"}}>🔒</span>
+                  : <span style={{fontSize:"0.6rem",color:C.muted}}>{[sp.campeon,sp.subcampeon,sp.goleador,sp.goleadorDesignado,sp.arqueroDesignado].filter(Boolean).length}/5</span>
+                }
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={openEspSection==="especiales"?"M18 15l-6-6-6 6":"M6 9l6 6 6-6"}/>
+                </svg>
               </button>
 
             </div>
@@ -3053,53 +3053,3 @@ export default function App() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
