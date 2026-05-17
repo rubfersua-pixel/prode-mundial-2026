@@ -415,7 +415,7 @@ const FECHAS = [
     {id:1065,home:"bel",away:"nzl",time:"12:00",venue:"BC Place",group:"G"},
     {id:1066,home:"egy",away:"iri",time:"13:00",venue:"Lumen Field",group:"G"},
   ]},
-  {id:17,label:"Fecha 17",sub:"Sábado 17 de Mayo, 2026",matches:[
+  {id:17,label:"Fecha 17",sub:"Domingo 18 de Mayo, 2026",matches:[
     {id:1067,home:"pan",away:"eng",time:"14:00",venue:"MetLife Stadium",group:"L"},
     {id:1068,home:"cro",away:"gha",time:"15:00",venue:"Lincoln Financial Field",group:"L"},
     {id:1069,home:"col",away:"por",time:"16:00",venue:"Hard Rock Stadium",group:"K"},
@@ -3053,3 +3053,55 @@ export default function App() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
