@@ -2077,7 +2077,7 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
                           {label:"👑 Rey Llaves", val:r.krHits||0, color:C.gold},
                         ].map(({label,val,color})=>(
                           <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0.2rem 0.4rem",background:"rgba(255,255,255,0.03)",borderRadius:"0.4rem"}}>
-                            <span style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.5)"}}>{label}</span>
+                            <span style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.8)"}}>{label}</span>
                             <span style={{fontSize:"0.72rem",fontWeight:900,color:val>0?color:"rgba(255,255,255,0.2)"}}>{val} pts</span>
                           </div>
                         ))}
@@ -3053,6 +3053,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
