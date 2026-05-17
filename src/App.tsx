@@ -407,7 +407,7 @@ const FECHAS = [
     {id:1059,home:"tur",away:"usa",time:"21:00",venue:"SoFi Stadium",group:"D"},
     {id:1060,home:"par",away:"aus",time:"22:00",venue:"Levi's Stadium",group:"D"},
   ]},
-  {id:16,label:"Fecha 16",sub:"Sábado 17 de Mayo, 2026",matches:[
+  {id:16,label:"Fecha 16",sub:"Domingo 18 de Mayo, 2026",matches:[
     {id:1061,home:"nor",away:"fra",time:"08:00",venue:"Gillette Stadium",group:"I"},
     {id:1062,home:"sen",away:"irq",time:"09:00",venue:"BMO Field",group:"I"},
     {id:1063,home:"uru",away:"esp",time:"10:00",venue:"Estadio Akron",group:"H"},
@@ -3053,6 +3053,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
