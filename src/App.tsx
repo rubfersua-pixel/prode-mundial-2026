@@ -1936,11 +1936,11 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
           const fsc=allFSc[un]||{}, fjk=allFJk[un]||[];
 
           // Phase groups points
-          let grpPts=0,breakdown={};
+          let grpPts=0,espPts=0,breakdown={};
           if(rr){
             const rObj=Object.fromEntries(ALL_MATCHES.map(m=>[m.id,rr.scores?.[m.id]]));
             const merged={...rObj,...rr.specials};
-            try{const cp=calcPoints(sc,usp,merged,jk);grpPts=cp.total;breakdown=cp.breakdown||{};}catch(_){}
+            try{const cp=calcPoints(sc,usp,merged,jk);grpPts=cp.partidos;espPts=cp.especiales;breakdown=cp.breakdown||{};}catch(_){}
           }
 
           // Fases finales points (knockout results from real:knockout)
@@ -1963,7 +1963,7 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
           });
           // Top 3 get bonus (calculated after sorting)
           const filled=ALL_MATCHES.filter(m=>{const s=sc[m.id];return s&&!isNaN(parseInt(s.home))&&!isNaN(parseInt(s.away));}).length;
-          return {username:un, grpPts, finPts, krHits, filled, total:ALL_MATCHES.length, breakdown};
+          return {username:un, grpPts, espPts, finPts, krHits, filled, total:ALL_MATCHES.length, breakdown};
         }));
 
         // Apply Rey de Llaves bonus to top 3
@@ -1971,7 +1971,7 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
         const krBonus=[10,6,3];
         sorted.forEach((r,i)=>{ if(i<3&&r.krHits>0) r.finPts+=krBonus[i]; });
 
-        data.forEach(r=>{ r.totalPts=r.grpPts+r.finPts; });
+        data.forEach(r=>{ r.totalPts=r.grpPts+(r.espPts||0)+r.finPts+(r.krHits||0); });
         data.sort((a,b)=>b.totalPts-a.totalPts||b.filled-a.filled||a.username.localeCompare(b.username));
         if(alive) setRows(data);
       }catch(err){console.error('Ranking error:',err);if(alive)setError(String(err));}
@@ -2066,11 +2066,11 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
                     {selectedUser?.username===r.username && (
                       <div style={{gridColumn:"1/-1",background:"rgba(255,255,255,0.03)",border:`1px solid rgba(255,255,255,0.08)`,borderRadius:"0.6rem",padding:"0.6rem 0.75rem",marginTop:"0.25rem",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:"0.4rem"}}>
                         {[
-                          {label:"⚽ Partidos", val:r.grpPts, color:"rgba(251,191,36,0.8)"},
+                          {label:"📅 Partidos", val:r.grpPts, color:"rgba(251,191,36,0.8)"},
                           {label:"🏆 Campeón", val:r.breakdown?.campeon||0, color:C.gold},
                           {label:"🥈 Subcampeón", val:r.breakdown?.subcampeon||0, color:"#94a3b8"},
                           {label:"👟 Goleador", val:r.breakdown?.goleador||0, color:C.emerald},
-                          {label:`👟 ${r.breakdown?.goleadorDesignadoName||"Designado"}`, val:r.breakdown?.goleadorDesignado||0, color:"#fb7185"},
+                          {label:`⚽ ${r.breakdown?.goleadorDesignadoName||"Designado"}`, val:r.breakdown?.goleadorDesignado||0, color:"#fb7185"},
                           {label:`🧤 ${r.breakdown?.arqueroDesignadoName||"Arquero"}`, val:r.breakdown?.arqueroDesignado||0, color:C.sky},
                           {label:"🎯 Clasificados", val:r.breakdown?.clasificados||0, color:C.violet},
                           {label:"🏅 Finales", val:r.finPts||0, color:C.violet},
@@ -3053,6 +3053,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
