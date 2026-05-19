@@ -1431,7 +1431,12 @@ function AdminPanel({onLogout}) {
               {id:"qf",label:"Cuartos",icon:"🔥"},{id:"sf",label:"Semis",icon:"💥"},
               {id:"third",label:"3° Puesto",icon:"🥉"},{id:"final",label:"Final",icon:"👑"},
             ];
-            const r32t=R32_MATCHES.map(m=>({...m,homeId:resolveSlot(m.home,null,res),awayId:resolveSlot(m.away,null,res)}));
+            const adminRealRes={scores:res,specials:rsp,knockoutResults:koRes};
+            const thirdsMapAdmin=rsp.thirds||{};
+            const r32t=R32_MATCHES.map(m=>({...m,
+              homeId:m.home?.type==="T"?(thirdsMapAdmin[m.id]||null):resolveSlot(m.home,adminRealRes,res),
+              awayId:m.away?.type==="T"?(thirdsMapAdmin[m.id]||null):resolveSlot(m.away,adminRealRes,res)
+            }));
             return KO_ROUNDS.map(round=>{
               const matches=round.id==="r32"?r32t:BRACKET[round.id].map(m=>({
                 id:m.id,
@@ -1447,10 +1452,19 @@ function AdminPanel({onLogout}) {
                       const s=koRes[m.id]||{};
                       const h=parseInt(s.home),a=parseInt(s.away),has=!isNaN(h)&&!isNaN(a);
                       const winner=has&&h!==a?(h>a?hT:aT):null;
+                      // Designados in this KO match
+                      const koDesig = has ? getDesignadosForMatch({home:m.homeId,away:m.awayId}, rsp.goleadoresDesignados||{}, rsp.arquerosDesignados||{}) : {goleadores:[],arqueros:[]};
+                      // Also check from userSpecials
+                      const allGDko={...rsp.goleadoresDesignados};
+                      const allAQko={...rsp.arquerosDesignados};
+                      userSpecials.forEach(u=>{const sp=u.data||{};if(sp.goleadorDesignado&&!(sp.goleadorDesignado in allGDko))allGDko[sp.goleadorDesignado]="";if(sp.arqueroDesignado&&!(sp.arqueroDesignado in allAQko))allAQko[sp.arqueroDesignado]="";});
+                      const koDesig2 = has ? getDesignadosForMatch({home:m.homeId,away:m.awayId}, allGDko, allAQko) : {goleadores:[],arqueros:[]};
+                      const hasKoDesig = koDesig2.goleadores.length>0||koDesig2.arqueros.length>0;
                       return(
-                        <div key={m.id} style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:"0.75rem",padding:"0.5rem"}}>
+                        <div key={m.id}>
+                        <div style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:"0.75rem",padding:"0.5rem",marginBottom:hasKoDesig?"0.25rem":"0"}}>
                           <div style={{fontSize:"0.55rem",color:C.muted,marginBottom:"0.35rem",fontWeight:700,display:"flex",justifyContent:"space-between"}}>
-                            <span>Partido {i+1}</span>
+                            <span>{hT&&aT?`${hT.name} vs ${aT.name}`:`Partido ${i+1}`}</span>
                             {winner&&<span style={{color:C.emerald,fontWeight:900}}>✓ {winner.short}</span>}
                           </div>
                           <div style={{display:"flex",alignItems:"center",gap:"0.3rem"}}>
@@ -1470,6 +1484,42 @@ function AdminPanel({onLogout}) {
                               {aT?<><FlagImg team={aT} size={22}/><span style={{fontSize:"0.62rem",fontWeight:900,color:"white"}}>{aT.short}</span></>:<span style={{fontSize:"0.6rem",color:C.muted,fontStyle:"italic"}}>TBD</span>}
                             </div>
                           </div>
+                        </div>
+                        {has&&hasKoDesig&&(
+                          <div style={{marginBottom:"0.4rem",padding:"0.4rem 0.5rem",background:"rgba(251,191,36,0.05)",border:"1px solid rgba(251,191,36,0.15)",borderRadius:"0.5rem"}}>
+                            <div style={{fontSize:"0.55rem",fontWeight:900,textTransform:"uppercase",color:"rgba(251,191,36,0.6)",marginBottom:"0.3rem"}}>⭐ Designados en este partido</div>
+                            {koDesig2.goleadores.map(player=>(
+                              <div key={player} style={{display:"flex",alignItems:"center",gap:"0.4rem",marginBottom:"0.25rem"}}>
+                                <span style={{fontSize:"0.65rem"}}>⚽</span>
+                                <span style={{fontSize:"0.65rem",color:"white",fontWeight:700,flex:1}}>{player}</span>
+                                <input type="number" min="0" max="20"
+                                  value={rsp.designadoEvents?.[m.id]?.goleadores?.[player]??rsp.goleadoresDesignados?.[player]??""}
+                                  onChange={e=>setRsp(p=>({...p,designadoEvents:{...p.designadoEvents,[m.id]:{...p.designadoEvents?.[m.id],goleadores:{...p.designadoEvents?.[m.id]?.goleadores,[player]:e.target.value}}}}))}
+                                  placeholder="0"
+                                  style={{width:"3rem",height:"1.75rem",textAlign:"center",fontSize:"0.75rem",fontWeight:900,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:"0.4rem",color:"white",outline:"none",fontFamily:FONT,WebkitAppearance:"none",MozAppearance:"textfield"}}/>
+                                <span style={{fontSize:"0.55rem",color:"rgba(255,255,255,0.3)"}}>gol(es)</span>
+                              </div>
+                            ))}
+                            {koDesig2.arqueros.map(player=>(
+                              <div key={player} style={{display:"flex",alignItems:"center",gap:"0.4rem",marginBottom:"0.25rem"}}>
+                                <span style={{fontSize:"0.65rem"}}>🧤</span>
+                                <span style={{fontSize:"0.65rem",color:"white",fontWeight:700,flex:1}}>{player}</span>
+                                <div style={{display:"flex",gap:"0.3rem"}}>
+                                  <button onClick={()=>setRsp(p=>({...p,designadoEvents:{...p.designadoEvents,[m.id]:{...p.designadoEvents?.[m.id],arqueros:{...p.designadoEvents?.[m.id]?.arqueros,[player]:true}}}}))}
+                                    style={{...S.btn,padding:"0.2rem 0.5rem",fontSize:"0.6rem",fontWeight:900,
+                                      background:rsp.designadoEvents?.[m.id]?.arqueros?.[player]===true?"rgba(52,211,153,0.2)":"rgba(255,255,255,0.05)",
+                                      border:`1px solid ${rsp.designadoEvents?.[m.id]?.arqueros?.[player]===true?"rgba(52,211,153,0.4)":"rgba(255,255,255,0.1)"}`,
+                                      color:rsp.designadoEvents?.[m.id]?.arqueros?.[player]===true?C.emerald:"rgba(255,255,255,0.4)"}}>✓ Valla</button>
+                                  <button onClick={()=>setRsp(p=>({...p,designadoEvents:{...p.designadoEvents,[m.id]:{...p.designadoEvents?.[m.id],arqueros:{...p.designadoEvents?.[m.id]?.arqueros,[player]:false}}}}))}
+                                    style={{...S.btn,padding:"0.2rem 0.5rem",fontSize:"0.6rem",fontWeight:900,
+                                      background:rsp.designadoEvents?.[m.id]?.arqueros?.[player]===false?"rgba(251,113,133,0.2)":"rgba(255,255,255,0.05)",
+                                      border:`1px solid ${rsp.designadoEvents?.[m.id]?.arqueros?.[player]===false?"rgba(251,113,133,0.4)":"rgba(255,255,255,0.1)"}`,
+                                      color:rsp.designadoEvents?.[m.id]?.arqueros?.[player]===false?C.rose:"rgba(255,255,255,0.4)"}}>✗ Gol</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         </div>
                       );
                     })}
@@ -1992,12 +2042,18 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
           return {username:un, grpPts, espPts, finPts, krHits, filled, total:ALL_MATCHES.length, breakdown};
         }));
 
-        // Apply Rey de Llaves bonus to top 3
+        // Rey de Llaves bonus — only when ALL KO matches are completed
+        const totalKOMatches = R32_MATCHES.length + BRACKET.r16.length + BRACKET.qf.length + BRACKET.sf.length + BRACKET.third.length + BRACKET.final.length;
+        const completedKO = Object.keys(rr?.knockoutResults||{}).filter(mid=>{
+          const s=rr.knockoutResults[mid];
+          return s&&!isNaN(parseInt(s.home))&&!isNaN(parseInt(s.away));
+        }).length;
+        const koComplete = completedKO >= totalKOMatches;
         const sorted=[...data].sort((a,b)=>b.krHits-a.krHits);
         const krBonus=[10,6,3];
-        sorted.forEach((r,i)=>{ if(i<3&&r.krHits>0) r.finPts+=krBonus[i]; });
+        sorted.forEach((r,i)=>{ r.krPts = (koComplete && i<3 && r.krHits>0) ? krBonus[i] : 0; });
 
-        data.forEach(r=>{ r.totalPts=r.grpPts+(r.espPts||0)+r.finPts+(r.krHits||0); });
+        data.forEach(r=>{ r.totalPts=r.grpPts+(r.espPts||0)+r.finPts+(r.krPts||0); });
         data.sort((a,b)=>b.totalPts-a.totalPts||b.filled-a.filled||a.username.localeCompare(b.username));
         if(alive) setRows(data);
       }catch(err){console.error('Ranking error:',err);if(alive)setError(String(err));}
@@ -2040,7 +2096,7 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
           <>
             {/* Column headers */}
             <div style={{display:"grid",gridTemplateColumns:"2rem 1fr 5rem 5rem 5rem",gap:"0.25rem",padding:"0.4rem 0.75rem",background:"rgba(255,255,255,0.05)",borderBottom:br,flexShrink:0}}>
-              {["#","Usuario","Grupos","Finales","Total"].map((h,i)=>(
+              {["#","Usuario","Fase Grupos","Fase Finales","Total"].map((h,i)=>(
                 <span key={i} style={{fontSize:"0.55rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",
                   color:i===4?C.gold:i===3?C.violet:i===2?"rgba(251,191,36,0.6)":C.muted,textAlign:i===0?"left":"center"}}>{h}</span>
               ))}
@@ -2092,15 +2148,15 @@ function RankingModal({onClose, currentUser, realRes, inline=false}) {
                     {selectedUser?.username===r.username && (
                       <div style={{gridColumn:"1/-1",background:"rgba(255,255,255,0.03)",border:`1px solid rgba(255,255,255,0.08)`,borderRadius:"0.6rem",padding:"0.6rem 0.75rem",marginTop:"0.25rem",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:"0.4rem"}}>
                         {[
-                          {label:"📅 Partidos", val:r.grpPts, color:"rgba(251,191,36,0.8)"},
+                          {label:"📅 Fase Grupos", val:r.grpPts, color:"rgba(251,191,36,0.8)"},
                           {label:"🏆 Campeón", val:r.breakdown?.campeon||0, color:C.gold},
                           {label:"🥈 Subcampeón", val:r.breakdown?.subcampeon||0, color:"#94a3b8"},
                           {label:"👟 Goleador", val:r.breakdown?.goleador||0, color:C.emerald},
                           {label:`⚽ ${r.breakdown?.goleadorDesignadoName||"Designado"}`, val:r.breakdown?.goleadorDesignado||0, color:"#fb7185"},
                           {label:`🧤 ${r.breakdown?.arqueroDesignadoName||"Arquero"}`, val:r.breakdown?.arqueroDesignado||0, color:C.sky},
                           {label:"🎯 Clasificados", val:r.breakdown?.clasificados||0, color:C.violet},
-                          {label:"🏅 Finales", val:r.finPts||0, color:C.violet},
-                          {label:"👑 Rey Llaves", val:r.krHits||0, color:C.gold},
+                          {label:"🏅 Fase Finales", val:r.finPts||0, color:C.violet},
+                          {label:"👑 Rey de Llaves", val:r.krPts||0, color:C.gold},
                         ].map(({label,val,color})=>(
                           <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0.2rem 0.4rem",background:"rgba(255,255,255,0.03)",borderRadius:"0.4rem"}}>
                             <span style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.8)"}}>{label}</span>
@@ -3171,6 +3227,10 @@ export default function App() {
     </div>
   );
 }
+
+
+
+
 
 
 
