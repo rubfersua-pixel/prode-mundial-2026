@@ -1464,7 +1464,10 @@ function AdminPanel({onLogout}) {
                         <div key={m.id}>
                         <div style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:"0.75rem",padding:"0.5rem",marginBottom:hasKoDesig?"0.25rem":"0"}}>
                           <div style={{fontSize:"0.55rem",color:C.muted,marginBottom:"0.35rem",fontWeight:700,display:"flex",justifyContent:"space-between"}}>
-                            <span>{hT&&aT?`${hT.name} vs ${aT.name}`:`Partido ${i+1}`}</span>
+                            <div style={{display:"flex",flexDirection:"column",gap:"0.1rem"}}>
+                              <span style={{color:"rgba(255,255,255,0.7)"}}>{hT&&aT?`${hT.name} vs ${aT.name}`:`Partido ${i+1}`}</span>
+                              {(()=>{const ko=KO_KICKOFF[m.id];if(!ko)return null;const d=new Date(ko);const h=d.getUTCHours()-4;const hBot=h<0?h+24:h;return <span style={{color:C.muted}}>{`${hBot.toString().padStart(2,"0")}:00 BOT`}</span>})()}
+                            </div>
                             {winner&&<span style={{color:C.emerald,fontWeight:900}}>✓ {winner.short}</span>}
                           </div>
                           <div style={{display:"flex",alignItems:"center",gap:"0.3rem"}}>
@@ -1896,21 +1899,32 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
               : "Calculando..."}
           </div>
         ) : (
-          <div style={{display:"flex",gap:"0.5rem",justifyContent:"center",flexWrap:"wrap"}}>
-            {krRanking.slice(0,3).map((u,i)=>(
-              <div key={u.username} style={{
-                flex:1,minWidth:"80px",maxWidth:"160px",
-                background:i===0?"rgba(251,191,36,0.12)":i===1?"rgba(148,163,184,0.1)":"rgba(180,83,9,0.1)",
-                border:`1px solid ${i===0?"rgba(251,191,36,0.3)":i===1?"rgba(148,163,184,0.2)":"rgba(180,83,9,0.2)"}`,
-                borderRadius:"1rem",padding:"0.75rem 0.5rem",textAlign:"center",
-                order:i===0?1:i===1?0:2, // silver left, gold center, bronze right
-              }}>
-                <div style={{fontSize:i===0?"2rem":"1.5rem",marginBottom:"0.25rem"}}>{podiumIcons[i]}</div>
-                <div style={{fontSize:"0.75rem",fontWeight:900,color:podiumColors[i],marginBottom:"0.15rem",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.username}</div>
-                <div style={{fontSize:"0.85rem",fontWeight:900,color:"white"}}>{u.hits} <span style={{fontSize:"0.6rem",color:C.muted}}>aciertos</span></div>
-                <div style={{fontSize:"0.7rem",fontWeight:900,color:podiumColors[i],marginTop:"0.15rem"}}>+{podiumPts[i]} pts</div>
-              </div>
-            ))}
+          <div style={{display:"flex",gap:"0.5rem",justifyContent:"center",alignItems:"flex-end",flexWrap:"wrap"}}>
+            {[krRanking[0],krRanking[1],krRanking[2]].map((u,pos)=>{
+              if(!u) return null;
+              // pos 0=Gold, 1=Silver, 2=Bronze — displayed left to right in that order
+              const scale = pos===0 ? 1.15*1.15 : pos===1 ? 1.15 : 1; // Gold 32% bigger, Silver 15% bigger than Bronze
+              const baseW = 120;
+              const w = Math.round(baseW * scale);
+              const bg = pos===0?"rgba(251,191,36,0.12)":pos===1?"rgba(148,163,184,0.1)":"rgba(180,83,9,0.1)";
+              const border = pos===0?"rgba(251,191,36,0.3)":pos===1?"rgba(148,163,184,0.2)":"rgba(180,83,9,0.2)";
+              const iconSize = pos===0?"2.2rem":pos===1?"1.9rem":"1.6rem";
+              const nameSz = pos===0?"0.8rem":pos===1?"0.72rem":"0.65rem";
+              const hitsSz = pos===0?"0.95rem":pos===1?"0.85rem":"0.75rem";
+              return (
+                <div key={u.username} style={{
+                  width:`${w}px`,flexShrink:0,
+                  background:bg, border:`1px solid ${border}`,
+                  borderRadius:"1rem",padding:pos===0?"1rem 0.5rem":pos===1?"0.85rem 0.5rem":"0.7rem 0.4rem",
+                  textAlign:"center",
+                }}>
+                  <div style={{fontSize:iconSize,marginBottom:"0.25rem"}}>{podiumIcons[pos]}</div>
+                  <div style={{fontSize:nameSz,fontWeight:900,color:podiumColors[pos],marginBottom:"0.15rem",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.username}</div>
+                  <div style={{fontSize:hitsSz,fontWeight:900,color:"white"}}>{u.hits} <span style={{fontSize:"0.6rem",color:C.muted}}>aciertos</span></div>
+                  <div style={{fontSize:pos===0?"0.75rem":"0.65rem",fontWeight:900,color:podiumColors[pos],marginTop:"0.15rem"}}>+{podiumPts[pos]} pts</div>
+                </div>
+              );
+            })}
           </div>
         )}
         </div>{/* end inner card */}
@@ -2679,10 +2693,21 @@ function FloatingInfo({onOpen}) {
 // --- DESIGNADOS VIEW ----------------------------------------------------------
 
 // --- TODOS CLASIF VIEW --------------------------------------------------------
-function TodosUserRow({u, currentUser}) {
+function TodosUserRow({u, currentUser, realGrupos={}, hasReal=false}) {
   const [expanded, setExpanded] = useState(false);
   const totalClasif = Object.values(u.clasificados||{}).reduce((s,a)=>s+(a?.length||0),0);
   const isMe = u.username===currentUser;
+
+  // Calculate points earned for this user
+  let totalPts = 0;
+  if(hasReal) {
+    Object.entries(u.clasificados||{}).forEach(([gid, sel])=>{
+      const real = realGrupos[gid]||[];
+      (sel||[]).slice(0,2).forEach(tid=>{ if(real.includes(tid)) totalPts+=PTS_CLASIFICADO; });
+      if(sel?.[2]&&real.includes(sel[2])) totalPts+=PTS_TERCERO;
+    });
+  }
+
   return (
     <div style={{marginBottom:"0.4rem",background:isMe?"rgba(251,191,36,0.06)":"rgba(255,255,255,0.03)",border:`1px solid ${isMe?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.07)"}`,borderRadius:"0.6rem",overflow:"hidden"}}>
       <div style={{display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.5rem 0.75rem"}}>
@@ -2694,8 +2719,13 @@ function TodosUserRow({u, currentUser}) {
           {u.goleador&&<span style={{fontSize:"0.62rem",color:"rgba(255,255,255,0.45)"}}>👟 <span style={{color:"white",fontWeight:700}}>{u.goleador}</span></span>}
         </div>
         {totalClasif>0&&(
-          <button onClick={()=>setExpanded(p=>!p)} style={{...S.btn,padding:"0.2rem 0.5rem",fontSize:"0.6rem",fontWeight:700,background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.25)",color:"#a78bfa",flexShrink:0}}>
-            🎯 {totalClasif} {expanded?"▲":"▼"}
+          <button onClick={()=>setExpanded(p=>!p)} style={{...S.btn,padding:"0.2rem 0.5rem",fontSize:"0.6rem",fontWeight:700,
+            background:expanded?"rgba(167,139,250,0.2)":"rgba(167,139,250,0.1)",
+            border:"1px solid rgba(167,139,250,0.25)",color:"#a78bfa",flexShrink:0,
+            display:"flex",alignItems:"center",gap:"0.3rem"}}>
+            <span>🎯 {totalClasif}</span>
+            {hasReal&&totalPts>0&&<span style={{color:C.emerald,fontWeight:900}}>+{totalPts}pts</span>}
+            <span>{expanded?"▲":"▼"}</span>
           </button>
         )}
       </div>
@@ -2703,20 +2733,44 @@ function TodosUserRow({u, currentUser}) {
         <div style={{borderTop:"1px solid rgba(255,255,255,0.06)",padding:"0.5rem 0.75rem",background:"rgba(255,255,255,0.02)"}}>
           {Object.entries(GROUPS).map(([gid,tids],gi)=>{
             const sel=u.clasificados?.[gid]||[];
+            const real=realGrupos[gid]||[];
             if(sel.length===0) return null;
+            let grpPts=0;
             return (
-              <div key={gid} style={{display:"flex",alignItems:"flex-start",gap:"0.5rem",marginBottom:"0.3rem"}}>
+              <div key={gid} style={{display:"flex",alignItems:"flex-start",gap:"0.5rem",marginBottom:"0.35rem"}}>
                 <span style={{fontSize:"0.55rem",fontWeight:900,padding:"0.15rem 0.35rem",borderRadius:"0.3rem",background:GCOLORS[gi%GCOLORS.length],color:"#000",flexShrink:0,marginTop:"0.1rem"}}>GRP {gid}</span>
-                <div style={{display:"flex",flexWrap:"wrap",gap:"0.25rem"}}>
-                  {sel.map((tid,idx)=>(
-                    <span key={tid} style={{fontSize:"0.65rem",fontWeight:700,color:idx===2?"#f59e0b":"#34d399",background:idx===2?"rgba(251,191,36,0.1)":"rgba(52,211,153,0.08)",padding:"0.1rem 0.4rem",borderRadius:"0.3rem",border:`1px solid ${idx===2?"rgba(251,191,36,0.2)":"rgba(52,211,153,0.2)"}`}}>
-                      {T[tid]?.name||tid}{idx===2&&<span style={{fontSize:"0.5rem",marginLeft:"0.2rem",opacity:0.7}}> 3°</span>}
-                    </span>
-                  ))}
+                <div style={{display:"flex",flexWrap:"wrap",gap:"0.25rem",flex:1}}>
+                  {sel.map((tid,idx)=>{
+                    const isThird = idx===2;
+                    const pts = isThird?PTS_TERCERO:PTS_CLASIFICADO;
+                    const hit = hasReal && real.includes(tid);
+                    const miss = hasReal && !real.includes(tid);
+                    if(hit) grpPts+=pts;
+                    return (
+                      <span key={tid} style={{
+                        fontSize:"0.65rem",fontWeight:700,
+                        color:hit?C.emerald:miss?"rgba(251,113,133,0.7)":isThird?"#f59e0b":"#34d399",
+                        background:hit?"rgba(52,211,153,0.1)":miss?"rgba(251,113,133,0.08)":isThird?"rgba(251,191,36,0.1)":"rgba(52,211,153,0.08)",
+                        padding:"0.1rem 0.4rem",borderRadius:"0.3rem",
+                        border:`1px solid ${hit?"rgba(52,211,153,0.3)":miss?"rgba(251,113,133,0.25)":isThird?"rgba(251,191,36,0.2)":"rgba(52,211,153,0.2)"}`,
+                        display:"inline-flex",alignItems:"center",gap:"0.2rem"
+                      }}>
+                        {T[tid]?.name||tid}
+                        {isThird&&<span style={{fontSize:"0.5rem",opacity:0.7}}>3°</span>}
+                        {hit&&<span style={{fontSize:"0.6rem"}}>✅ +{pts}pt</span>}
+                        {miss&&<span style={{fontSize:"0.6rem"}}>❌</span>}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             );
           })}
+          {hasReal&&totalPts>0&&(
+            <div style={{marginTop:"0.4rem",paddingTop:"0.4rem",borderTop:"1px solid rgba(255,255,255,0.06)",display:"flex",justifyContent:"flex-end"}}>
+              <span style={{fontSize:"0.68rem",fontWeight:900,color:C.emerald}}>Total clasificados: +{totalPts} pts</span>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -2724,10 +2778,16 @@ function TodosUserRow({u, currentUser}) {
 }
 
 function TodosClasifView({data, currentUser}) {
+  const [realRes, setRealRes] = useState(null);
+  useEffect(()=>{
+    sGetRealResults().then(r=>setRealRes(r)).catch(()=>{});
+  },[]);
+  const realGrupos = realRes?.specials?.clasificados?.grupos||{};
+  const hasReal = Object.keys(realGrupos).length>0;
   return (
     <div style={{padding:"0 1rem"}}>
       <div style={{fontSize:"0.6rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.35)",marginBottom:"0.75rem"}}>🏆 Campeón · 🥈 Subcampeón · 👟 Goleador · 🎯 Clasificados</div>
-      {data.map(u=><TodosUserRow key={u.username} u={u} currentUser={currentUser}/>)}
+      {data.map(u=><TodosUserRow key={u.username} u={u} currentUser={currentUser} realGrupos={realGrupos} hasReal={hasReal}/>)}
     </div>
   );
 }
@@ -3227,6 +3287,8 @@ export default function App() {
     </div>
   );
 }
+
+
 
 
 
