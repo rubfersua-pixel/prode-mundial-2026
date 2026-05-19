@@ -2790,6 +2790,15 @@ export default function App() {
     setOpenF(null);setOpenG(null);setVis(PAGE_SIZE);setSubRound(null);
   },[]);
 
+  // Auto-refresh realRes every 2 minutes so posiciones and fases finales stay updated
+  useEffect(()=>{
+    const t=setInterval(async()=>{
+      const rr=await sGetRealResults().catch(()=>null);
+      if(rr) setReal(rr);
+    },2*60*1000);
+    return()=>clearInterval(t);
+  },[]);
+
   const loadRanking=useCallback(async()=>{
     setRankLoad(true);
     try {
@@ -2984,9 +2993,16 @@ export default function App() {
               <h2 style={{margin:0,fontSize:"1rem",fontWeight:900,textTransform:"uppercase",color:C.emerald}}>Tabla de Posiciones</h2>
               <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(52,211,153,0.3),transparent)"}}/>
             </div>
-            {Object.keys(GROUPS).map((gid,i)=>(
-              <GroupTable key={gid} gid={gid} gi={i} scores={scores} isOpen={openG===gid} onToggle={()=>setOpenG(p=>p===gid?null:gid)}/>
-            ))}
+            {!realRes?.scores||!Object.keys(realRes.scores).length ? (
+              <div style={{padding:"2rem",textAlign:"center",background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:"0.75rem"}}>
+                <div style={{fontSize:"1.5rem",marginBottom:"0.5rem"}}>⏳</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted}}>Las posiciones se actualizan cuando el admin ingresa resultados reales</div>
+              </div>
+            ) : (
+              Object.keys(GROUPS).map((gid,i)=>(
+                <GroupTable key={gid} gid={gid} gi={i} scores={realRes.scores} isOpen={openG===gid} onToggle={()=>setOpenG(p=>p===gid?null:gid)}/>
+              ))
+            )}
           </div>
         )}
 
