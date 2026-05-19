@@ -1147,100 +1147,112 @@ function PendingUsers() {
 // --- ADMIN PANEL --------------------------------------------------------------
 
 // --- DESIGNADOS ADMIN SECTION -------------------------------------------------
-function DesignadosAdminSection({rsp, setRsp}) {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+// 8 partidos de 16avos que requieren un tercero clasificado
+const THIRDS_SLOTS = [
+  {matchId:"r32_3",  label:"Partido 3",  groups:["A","B","C","D","F"]},
+  {matchId:"r32_6",  label:"Partido 6",  groups:["C","D","F","G","H"]},
+  {matchId:"r32_7",  label:"Partido 7",  groups:["C","E","F","H","I"]},
+  {matchId:"r32_8",  label:"Partido 8",  groups:["E","H","I","J","K"]},
+  {matchId:"r32_9",  label:"Partido 9",  groups:["A","E","H","I","J"]},
+  {matchId:"r32_10", label:"Partido 10", groups:["B","E","F","I","J"]},
+  {matchId:"r32_13", label:"Partido 13", groups:["E","F","G","I","J"]},
+  {matchId:"r32_16", label:"Partido 16", groups:["D","E","I","J","L"]},
+];
 
-  useEffect(()=>{
-    const load = async () => {
-      setLoading(true);
+function DesignadosAdminSection({rsp, setRsp, res}) {
+  const thirds = rsp.thirds||{};
+  const adminGrupos = rsp.clasificados?.grupos||{};
+
+  const setThird = (matchId, teamId) => {
+    setRsp(p=>({...p, thirds:{...p.thirds, [matchId]:teamId}}));
+  };
+
+  // Resolve the fixed side (non-third) of each match
+  const resolveFixed = (slot) => {
+    const match = R32_MATCHES.find(m=>m.id===slot.matchId);
+    if(!match) return null;
+    // The fixed side is the one that is NOT type T
+    const fixedSlot = match.home?.type!=="T" ? match.home : match.away;
+    if(!fixedSlot) return null;
+    if(fixedSlot.type==="W"||fixedSlot.type==="R") {
+      const pos = fixedSlot.type==="W" ? 0 : 1;
       try {
-        const [users, spData] = await Promise.all([
-          sGetApprovedUsers(),
-          sbFetch("specials?select=username,data")
-        ]);
-        const spMap = {};
-        (spData||[]).forEach(r=>{ spMap[r.username]=r.data||{}; });
-        const rows = users.map(u=>({
-          username: u.username,
-          fullName: u.full_name||u.username,
-          goleadorDesignado: spMap[u.username]?.goleadorDesignado||"",
-          arqueroDesignado: spMap[u.username]?.arqueroDesignado||"",
-        }));
-        setData(rows);
-      } catch(_){}
-      setLoading(false);
-    };
-    load();
-  },[]);
-
-  // Get unique designated players
-  const goleadores = [...new Set(data.map(u=>u.goleadorDesignado).filter(Boolean))];
-  const arqueros   = [...new Set(data.map(u=>u.arqueroDesignado).filter(Boolean))];
-
-  const getUsersFor = (list, key, player) =>
-    list.filter(u=>u[key]===player).map(u=>u.fullName).join(", ");
-
-  if(loading) return <div style={{fontSize:"0.7rem",color:"rgba(255,255,255,0.3)",padding:"0.5rem 0"}}>Cargando designados...</div>;
-
-  if(!isDesignatedLocked()) return (
-    <div style={{marginTop:"0.75rem",padding:"0.5rem 0.75rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"0.6rem"}}>
-      <span style={{fontSize:"0.7rem",color:"rgba(255,255,255,0.35)"}}>🔒 Los designados se revelan el 14 mayo a las 07:50 BOT</span>
-    </div>
-  );
+        const fakeRR = {scores:res, specials:rsp};
+        const table = computeTable(fixedSlot.group, res);
+        return table[pos]?.id||null;
+      } catch(_){ return null; }
+    }
+    return null;
+  };
 
   return (
     <div style={{marginTop:"0.75rem",borderTop:`1px solid rgba(255,255,255,0.08)`,paddingTop:"0.75rem"}}>
+      <div style={{fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",color:C.violet,marginBottom:"0.6rem"}}>
+        ⚔️ Mejores Terceros — 16avos
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:"0.6rem"}}>
+        {THIRDS_SLOTS.map(slot=>{
+          const cur = thirds[slot.matchId]||"";
+          const fixedTeamId = resolveFixed(slot);
+          const fixedTeam = fixedTeamId ? T[fixedTeamId] : null;
+          const selectedTeam = cur ? T[cur] : null;
+          // Get already used thirds in other matches
+          const usedThirds = Object.entries(thirds)
+            .filter(([mid, tid]) => mid!==slot.matchId && tid)
+            .map(([,tid])=>tid);
+          const options = slot.groups
+            .map(gid=>({gid, team:(adminGrupos[gid]||[])[2]}))
+            .filter(x=>x.team && !usedThirds.includes(x.team));
 
-      {/* Goleadores Designados */}
-      {goleadores.length > 0 && (
-        <div style={{marginBottom:"0.75rem"}}>
-          <div style={{fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",color:"#fb7185",marginBottom:"0.4rem"}}>👟 Goles — Goleadores Designados</div>
-          <div style={{display:"flex",flexDirection:"column",gap:"0.35rem"}}>
-            {goleadores.map(player=>(
-              <div key={player} style={{display:"flex",alignItems:"center",gap:"0.5rem",padding:"0.4rem 0.6rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"0.5rem"}}>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:"0.72rem",fontWeight:700,color:"white"}}>{player}</div>
-                  <div style={{fontSize:"0.55rem",color:"rgba(255,255,255,0.35)",marginTop:"0.1rem"}}>{getUsersFor(data,"goleadorDesignado",player)}</div>
+          // Determine which is home/away for display
+          const match = R32_MATCHES.find(m=>m.id===slot.matchId);
+          const thirdIsAway = match?.away?.type==="T";
+
+          const homeTeam = thirdIsAway ? fixedTeam : selectedTeam;
+          const awayTeam = thirdIsAway ? selectedTeam : fixedTeam;
+          const homeName = homeTeam ? homeTeam.name : (thirdIsAway ? "..." : "❓ Por definir");
+          const awayName = awayTeam ? awayTeam.name : (thirdIsAway ? "❓ Por definir" : "...");
+
+          return (
+            <div key={slot.matchId} style={{padding:"0.6rem 0.75rem",background:"rgba(255,255,255,0.03)",border:`1px solid ${cur?"rgba(167,139,250,0.3)":"rgba(255,255,255,0.07)"}`,borderRadius:"0.6rem"}}>
+
+              {/* Header: label + llave */}
+              <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.5rem"}}>
+                <span style={{fontSize:"0.6rem",fontWeight:900,padding:"0.1rem 0.4rem",background:"rgba(167,139,250,0.15)",color:C.violet,borderRadius:"0.3rem",flexShrink:0}}>{slot.label}</span>
+                <div style={{flex:1,display:"flex",alignItems:"center",gap:"0.4rem"}}>
+                  <span style={{fontSize:"0.72rem",fontWeight:900,color:homeTeam?"white":"rgba(255,255,255,0.3)"}}>{homeName}</span>
+                  <span style={{fontSize:"0.6rem",color:"rgba(255,255,255,0.3)"}}>vs</span>
+                  <span style={{fontSize:"0.72rem",fontWeight:900,color:awayTeam?"white":"rgba(255,255,255,0.3)"}}>{awayName}</span>
+                  {cur&&<span style={{fontSize:"0.7rem",color:C.emerald}}>✓</span>}
                 </div>
-                <input type="number" min="0" max="99"
-                  value={rsp.goleadoresDesignados?.[player]||""}
-                  onChange={e=>setRsp(p=>({...p,goleadoresDesignados:{...p.goleadoresDesignados,[player]:e.target.value}}))}
-                  placeholder="0"
-                  style={{width:"3rem",height:"2rem",textAlign:"center",fontSize:"0.85rem",fontWeight:900,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:"0.4rem",color:"white",outline:"none",fontFamily:FONT,WebkitAppearance:"none",MozAppearance:"textfield"}}/>
-                <span style={{fontSize:"0.6rem",color:"rgba(255,255,255,0.3)"}}>goles</span>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Arqueros Designados */}
-      {arqueros.length > 0 && (
-        <div>
-          <div style={{fontSize:"0.65rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em",color:"#38bdf8",marginBottom:"0.4rem"}}>🧤 Arcos en 0 — Arqueros Designados</div>
-          <div style={{display:"flex",flexDirection:"column",gap:"0.35rem"}}>
-            {arqueros.map(player=>(
-              <div key={player} style={{display:"flex",alignItems:"center",gap:"0.5rem",padding:"0.4rem 0.6rem",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"0.5rem"}}>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:"0.72rem",fontWeight:700,color:"white"}}>{player}</div>
-                  <div style={{fontSize:"0.55rem",color:"rgba(255,255,255,0.35)",marginTop:"0.1rem"}}>{getUsersFor(data,"arqueroDesignado",player)}</div>
+              {/* Options */}
+              {options.length===0 ? (
+                <div style={{fontSize:"0.62rem",color:"rgba(255,255,255,0.3)"}}>⏳ Ingresá primero los clasificados por grupo arriba</div>
+              ) : (
+                <div style={{display:"flex",flexWrap:"wrap",gap:"0.3rem"}}>
+                  {options.map(({gid,team})=>{
+                    const teamData = T[team];
+                    const isSel = cur===team;
+                    return (
+                      <button key={team} onClick={()=>setThird(slot.matchId, isSel?"":team)}
+                        style={{...S.btn,display:"flex",alignItems:"center",gap:"0.35rem",padding:"0.3rem 0.6rem",
+                          background:isSel?"rgba(167,139,250,0.2)":"rgba(255,255,255,0.04)",
+                          border:`1px solid ${isSel?"rgba(167,139,250,0.5)":"rgba(255,255,255,0.1)"}`,
+                          borderRadius:"0.4rem"}}>
+                        <FlagImg team={teamData} size={14}/>
+                        <span style={{fontSize:"0.7rem",fontWeight:isSel?900:500,color:isSel?C.violet:"rgba(255,255,255,0.7)"}}>{teamData?.name||team}</span>
+                        <span style={{fontSize:"0.55rem",color:"rgba(255,255,255,0.3)"}}>({gid})</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                <input type="number" min="0" max="99"
-                  value={rsp.arquerosDesignados?.[player]||""}
-                  onChange={e=>setRsp(p=>({...p,arquerosDesignados:{...p.arquerosDesignados,[player]:e.target.value}}))}
-                  placeholder="0"
-                  style={{width:"3rem",height:"2rem",textAlign:"center",fontSize:"0.85rem",fontWeight:900,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:"0.4rem",color:"white",outline:"none",fontFamily:FONT,WebkitAppearance:"none",MozAppearance:"textfield"}}/>
-                <span style={{fontSize:"0.6rem",color:"rgba(255,255,255,0.3)"}}>arcos en 0</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {goleadores.length===0 && arqueros.length===0 && (
-        <div style={{fontSize:"0.7rem",color:"rgba(255,255,255,0.3)"}}>Ningún usuario ha seleccionado designados aún.</div>
-      )}
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1273,7 +1285,7 @@ function getDesignadosForMatch(match, goleadoresDesignados, arquerosDesignados) 
 
 function AdminPanel({onLogout}) {
   const [res,setRes]=useState(emptyScores);
-  const [rsp,setRsp]=useState({campeon:"",subcampeon:"",goleador:"",goleadoresDesignados:{},arquerosDesignados:{},designadoEvents:{},clasificados:{grupos:{}}});
+  const [rsp,setRsp]=useState({campeon:"",subcampeon:"",goleador:"",goleadoresDesignados:{},arquerosDesignados:{},designadoEvents:{},clasificados:{grupos:{}},thirds:{}});
   const [koRes,setKoRes]=useState({});
   const [openF,setOpenF]=useState(null);
   const [vis,setVis]=useState(PAGE_SIZE);
@@ -1332,7 +1344,7 @@ function AdminPanel({onLogout}) {
               if(!window.confirm("¿Borrar pronósticos de usuarios y resultados del admin? Los usuarios registrados se mantienen.")) return;
               await sDeleteGameData();
               setRes(emptyScores());
-              setRsp({campeon:"",subcampeon:"",goleador:"",goleadoresDesignados:{},arquerosDesignados:{},designadoEvents:{},clasificados:{grupos:{}}});
+              setRsp({campeon:"",subcampeon:"",goleador:"",goleadoresDesignados:{},arquerosDesignados:{},designadoEvents:{},clasificados:{grupos:{}},thirds:{}});
               setKoRes({});
               alert("Reset completado. Pronósticos y resultados borrados. La app se va a recargar.");
               window.location.reload();
@@ -1371,7 +1383,7 @@ function AdminPanel({onLogout}) {
             </div>
           </div>{/* end grid */}
           {/* Goleadores y Arqueros Designados — lista dinámica desde usuarios */}
-          <DesignadosAdminSection rsp={rsp} setRsp={setRsp}/>
+          <DesignadosAdminSection rsp={rsp} setRsp={setRsp} res={res}/>
           {/* Admin clasificados */}
           <div style={{borderTop:`1px solid ${C.border}`,paddingTop:"0.75rem",marginTop:"0.75rem"}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:"0.5rem"}}>
@@ -1672,7 +1684,11 @@ function resolveSlot(slot, realRes, groupScores) {
       return table[pos]?.id || null;
     } catch(_){ return null; }
   }
-  if(slot.type==="T") return realRes?.specials?.thirds?.[slot.groups?.join(",")]||null;
+  if(slot.type==="T") {
+    // Admin directly selects which third goes to each match
+    // Stored in realRes.specials.thirds[matchId]
+    return null; // resolved per match via r32Teams using thirds map
+  }
   return null;
 }
 
@@ -1782,7 +1798,12 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
   const handleScore=(id,side,v)=>{ if(isLocked(id)) return; setFScores(p=>({...p,[id]:{...p[id],[side]:v}})); };
   const handleJoker=id=>setFJokers(p=>p.includes(id)?p.filter(x=>x!==id):p.length>=2?p:[...p,id]);
   const toggleRound=id=>setSubRound(p=>p===id?null:id);
-  const r32Teams=R32_MATCHES.map(m=>({...m,homeId:resolveSlot(m.home,realRes,scores),awayId:resolveSlot(m.away,realRes,scores)}));
+  const thirdsMap = realRes?.specials?.thirds||{};
+  const r32Teams=R32_MATCHES.map(m=>{
+    const homeId = m.home?.type==="T" ? (thirdsMap[m.id]||null) : resolveSlot(m.home,realRes,scores);
+    const awayId = m.away?.type==="T" ? (thirdsMap[m.id]||null) : resolveSlot(m.away,realRes,scores);
+    return {...m,homeId,awayId};
+  });
   const knockoutReal=realRes?.knockout||{};
   const ROUNDS=[
     {id:"r32",label:"16avos",icon:"⚔️",color:C.violet,count:16,dates:"28 Jun-3 Jul"},
@@ -1856,7 +1877,12 @@ function FasesFinales({fScores,setFScores,fJokers,setFJokers,scores,realRes,subR
         {KO_DATES.map((fecha,fi)=>{
           const isOpen = openF===fecha.date;
           const adminResults = realRes?.knockoutResults||{};
-          const r32t = R32_MATCHES.map(x=>({...x,homeId:resolveSlot(x.home,realRes,scores),awayId:resolveSlot(x.away,realRes,scores)}));
+          const thirdsMap2 = realRes?.specials?.thirds||{};
+          const r32t = R32_MATCHES.map(x=>{
+            const homeId = x.home?.type==="T" ? (thirdsMap2[x.id]||null) : resolveSlot(x.home,realRes,scores);
+            const awayId = x.away?.type==="T" ? (thirdsMap2[x.id]||null) : resolveSlot(x.away,realRes,scores);
+            return {...x,homeId,awayId};
+          });
           const done = fecha.matches.filter(m=>{const s=fScores[m.id];return s&&!isNaN(parseInt(s.home))&&!isNaN(parseInt(s.away));}).length;
           const roundColors = {"r32":"#a78bfa","r16":"#38bdf8","qf":"#f59e0b","sf":"#fb7185","third":"#cd7f32","final":"#fbbf24"};
           return(
@@ -2107,21 +2133,34 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
   const [data,setData]=useState(null);
   const [loading,setLoading]=useState(true);
   const [refreshTick,setRefreshTick]=useState(0);
+  const koStarted = isLocked("r32_1");
+  const [muroTab,setMuroTab]=useState(()=>koStarted?"finales":"grupos");
 
+  // GRUPOS tab
   const allM=ALL_MATCHES, locked=allM.filter(m=>isLocked(m.id)), anyLocked=locked.length>0;
-  const nav=anyLocked?locked:allM;
+  const navGrupos=anyLocked?locked:allM;
+
+  // FINALES tab — all KO matches flattened
+  const allKO = KO_DATES.flatMap(d=>d.matches);
+  const lockedKO = allKO.filter(m=>isLocked(m.id));
+  const navFinales = lockedKO.length>0 ? lockedKO : allKO;
+
+  const nav = muroTab==="grupos" ? navGrupos : navFinales;
   const idx=Math.min(muroIdx,nav.length-1);
-  const m=nav[idx], hT=m?T[m.home]:null, aT=m?T[m.away]:null;
+  const m=nav[idx];
+  const hT=m?(muroTab==="grupos"?T[m.home]:T[data?.rr?.specials?.thirds?.[m.id]||""]||null):null;
+  const aT=m?(muroTab==="grupos"?T[m.away]:null):null;
   const mLocked=m?isLocked(m.id):false;
-  const real=data?.rr?.scores?.[m?.id];
+  const real=muroTab==="grupos"?data?.rr?.scores?.[m?.id]:data?.rr?.knockoutResults?.[m?.id];
 
   useEffect(()=>{
     let alive=true;
     (async()=>{
       try{
-        const [rr,sc,jk,spRaw] = await Promise.all([sGetRealResults(), sGetAllScores(), sGetAllJokers(), sbFetch('specials?select=username,data')]);
+        const [rr,sc,jk,spRaw,koScRaw,koJkRaw,approvedU] = await Promise.all([sGetRealResults(), sGetAllScores(), sGetAllJokers(), sbFetch('specials?select=username,data'), sGetAllFScores(), sGetAllFJokers(), sGetApprovedUsers()]);
         const sp={}; (spRaw||[]).forEach(r=>{sp[r.username]=r.data||{};});
-        if(alive)setData({sc,jk,rr,sp});
+        const allUsers=(approvedU||[]).map(u=>u.username).filter(u=>u!=='admin').sort();
+        if(alive)setData({sc,jk,rr,sp,koSc:koScRaw||{},koJk:koJkRaw||{},allUsers});
       }catch(_){}
       if(alive)setLoading(false);
     })();
@@ -2134,9 +2173,27 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
     return()=>clearInterval(t);
   },[]);
 
-  const goTo=i=>setMuroIdx(Math.max(0,Math.min(i,nav.length-1)));
+  const goTo=i=>{
+    setMuroIdx(Math.max(0,Math.min(i,nav.length-1)));
+  };
+  // Reset idx when tab changes
+  const switchTab=(tab)=>{
+    setMuroTab(tab);
+    if(tab==="finales"){
+      const lko=allKO.filter(m=>isLocked(m.id));
+      setMuroIdx(lko.length>0?lko.length-1:0);
+    } else {
+      const lg=allM.filter(m=>isLocked(m.id));
+      setMuroIdx(lg.length>0?lg.length-1:0);
+    }
+  };
   const users=data?Object.keys(data.sc).sort():[];
-  const vis=mLocked?users:(users.includes(currentUser)?[currentUser]:[]);
+  const koUsers=data?Object.keys(data.koSc||{}).sort():[];
+  // For finales: when locked show ALL approved users (same logic as grupos)
+  const allUsers=data?.allUsers||users;
+  const vis=muroTab==="grupos"
+    ?(mLocked?users:(users.includes(currentUser)?[currentUser]:[]))
+    :(mLocked?allUsers:(allUsers.includes(currentUser)?[currentUser]:[currentUser].filter(()=>koUsers.includes(currentUser))));
 
   const bg="#0d0d0d", br=`1px solid ${C.border}`;
   const hdr={fontSize:"0.55rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.08em"};
@@ -2157,21 +2214,64 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
           <button onClick={onClose} style={{...S.btn,width:"1.5rem",height:"1.5rem",borderRadius:"50%",background:"rgba(255,255,255,0.08)",color:C.muted,border:"none",fontSize:"0.85rem"}}>✕</button>
         </div>
 
+        {/* Tab buttons */}
+        <div style={{display:"flex",gap:"0.5rem",padding:"0.6rem 1rem",borderBottom:br,flexShrink:0}}>
+          <button onClick={()=>switchTab("grupos")}
+            style={{...S.btn,flex:1,padding:"0.45rem",display:"flex",alignItems:"center",justifyContent:"center",gap:"0.35rem",
+              background:muroTab==="grupos"?"rgba(52,211,153,0.15)":"rgba(255,255,255,0.04)",
+              border:`1px solid ${muroTab==="grupos"?"rgba(52,211,153,0.4)":"rgba(255,255,255,0.1)"}`,
+              borderRadius:"0.5rem"}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={muroTab==="grupos"?C.emerald:"rgba(255,255,255,0.4)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <span style={{fontSize:"0.68rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.06em",color:muroTab==="grupos"?C.emerald:"rgba(255,255,255,0.4)"}}>Grupos</span>
+          </button>
+          <button onClick={()=>switchTab("finales")}
+            style={{...S.btn,flex:1,padding:"0.45rem",display:"flex",alignItems:"center",justifyContent:"center",gap:"0.35rem",
+              background:muroTab==="finales"?"rgba(167,139,250,0.15)":"rgba(255,255,255,0.04)",
+              border:`1px solid ${muroTab==="finales"?"rgba(167,139,250,0.4)":"rgba(255,255,255,0.1)"}`,
+              borderRadius:"0.5rem"}}>
+            <span style={{fontSize:"0.85rem"}}>⚔️</span>
+            <span style={{fontSize:"0.68rem",fontWeight:900,textTransform:"uppercase",letterSpacing:"0.06em",color:muroTab==="finales"?C.violet:"rgba(255,255,255,0.4)"}}>Finales</span>
+          </button>
+        </div>
+
         {loading?<div style={{padding:"3rem",textAlign:"center",color:C.muted,fontWeight:900,fontSize:"0.75rem",textTransform:"uppercase"}}>Cargando...</div>:(
           <>
             {/* Navigator */}
             <div style={{padding:"0.6rem 1rem",borderBottom:br,display:"flex",alignItems:"center",gap:"0.5rem",flexShrink:0}}>
               <button onClick={()=>goTo(idx-1)} disabled={idx===0} style={{...S.btn,width:"1.75rem",height:"1.75rem",borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:br,color:C.muted,fontSize:"1rem",opacity:idx===0?0.3:1}}>‹</button>
               <div style={{flex:1,textAlign:"center"}}>
-                {hT&&aT&&<div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"0.4rem"}}>
+                {muroTab==="grupos"&&hT&&aT&&<div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"0.4rem"}}>
                   <FlagImg team={hT} size={20}/>
                   <span style={{fontSize:"0.8rem",fontWeight:900,color:"white"}}>{hT.short}</span>
                   <span style={{fontSize:"0.65rem",color:C.muted}}>vs</span>
                   <span style={{fontSize:"0.8rem",fontWeight:900,color:"white"}}>{aT.short}</span>
                   <FlagImg team={aT} size={20}/>
                 </div>}
+                {muroTab==="finales"&&m&&(()=>{
+                  const rr=data?.rr;
+                  const thirdsMap=rr?.specials?.thirds||{};
+                  const r32t=R32_MATCHES.map(x=>{
+                    const hId=x.home?.type==="T"?(thirdsMap[x.id]||null):resolveSlot(x.home,rr,Object.fromEntries(ALL_MATCHES.map(mm=>[mm.id,rr?.scores?.[mm.id]])));
+                    const aId=x.away?.type==="T"?(thirdsMap[x.id]||null):resolveSlot(x.away,rr,Object.fromEntries(ALL_MATCHES.map(mm=>[mm.id,rr?.scores?.[mm.id]])));
+                    return {...x,homeId:hId,awayId:aId};
+                  });
+                  const adminRes=rr?.knockoutResults||{};
+                  let homeId=null,awayId=null;
+                  if(m.round==="r32"){const r32m=r32t.find(x=>x.id===m.id);homeId=r32m?.homeId;awayId=r32m?.awayId;}
+                  else{homeId=m.loser?resolveKOLoser(m.home,adminRes,r32t):resolveKOTeam(m.home,adminRes,r32t);awayId=m.loser?resolveKOLoser(m.away,adminRes,r32t):resolveKOTeam(m.away,adminRes,r32t);}
+                  const hT2=homeId?T[homeId]:null, aT2=awayId?T[awayId]:null;
+                  return (
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"0.4rem"}}>
+                      {hT2?<><FlagImg team={hT2} size={20}/><span style={{fontSize:"0.8rem",fontWeight:900,color:"white"}}>{hT2.short}</span></>:<span style={{fontSize:"0.75rem",color:"rgba(255,255,255,0.3)"}}>TBD</span>}
+                      <span style={{fontSize:"0.65rem",color:C.muted}}>vs</span>
+                      {aT2?<><span style={{fontSize:"0.8rem",fontWeight:900,color:"white"}}>{aT2.short}</span><FlagImg team={aT2} size={20}/></>:<span style={{fontSize:"0.75rem",color:"rgba(255,255,255,0.3)"}}>TBD</span>}
+                    </div>
+                  );
+                })()}
                 <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"0.35rem",marginTop:"0.1rem"}}>
-                  <span style={{fontSize:"0.6rem",color:C.muted}}>{m?.time} BOT · GRP {m?.group} · {idx+1}/{nav.length}</span>
+                  <span style={{fontSize:"0.6rem",color:C.muted}}>{m?.time} BOT · {muroTab==="grupos"?`GRP ${m?.group}`:m?.roundLabel} · {idx+1}/{nav.length}</span>
                   <span style={{...hdr,padding:"0.1rem 0.3rem",borderRadius:"99px",background:mLocked?"rgba(251,113,133,0.15)":"rgba(52,211,153,0.15)",color:mLocked?C.rose:C.emerald}}>{mLocked?"🔒":"✏️"}</span>
                   {real&&<span style={{fontSize:"0.6rem",color:C.gold,fontWeight:900}}>Real:{real.home}–{real.away}</span>}
                 </div>
@@ -2188,7 +2288,9 @@ function MuroModal({onClose,muroIdx,setMuroIdx,currentUser,inline=false}) {
               </div>
               {vis.length===0?<div style={{padding:"2rem",textAlign:"center",color:C.muted,fontSize:"0.75rem"}}>Sin pronósticos</div>
               :vis.map((un,i)=>{
-                const pred=data.sc[un]?.[m?.id], jks=data.jk[un]||[], isJok=jks.includes(m?.id);
+                const pred=muroTab==="grupos"?data.sc[un]?.[m?.id]:data.koSc?.[un]?.[m?.id];
+                const jks=muroTab==="grupos"?(data.jk[un]||[]):(data.koJk?.[un]||[]);
+                const isJok=jks.includes?.(m?.id)||jks.includes?.(String(m?.id));
                 const h=pred?.home,a=pred?.away, has=h!==undefined&&h!==""&&a!==undefined&&a!==""&&!isNaN(+h)&&!isNaN(+a);
                 const res=has?(+h>+a?"home":+h<+a?"away":"draw"):null;
                 let pts=null; if(has&&real){pts=matchPts(pred,real);if(isJok)pts*=2;}
@@ -3069,6 +3171,12 @@ export default function App() {
     </div>
   );
 }
+
+
+
+
+
+
 
 
 
